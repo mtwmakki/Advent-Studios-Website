@@ -104,7 +104,7 @@ ul, ol { padding: 0; list-style: none; }
 [hidden] { display: none !important; }
 
 /* Reveals: hidden only when JS runs with motion allowed; a failsafe shows them after 3s regardless. */
-html.js:not(.reduced) :is([data-reveal], [data-fade]):not(.is-revealed) {
+html.js:not(.reduced) :is([data-reveal], [data-fade], [data-rise]):not(.is-revealed) {
   visibility: hidden;
   animation: reveal-failsafe 0s linear 3s forwards;
 }

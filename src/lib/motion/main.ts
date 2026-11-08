@@ -8,6 +8,7 @@ import { initNav } from './nav';
 import { initLineReveals } from './reveal';
 import { initHeroPanel } from './hero';
 import { initDashboardLoop } from './dashboard';
+import { initMarquee } from './marquee';
 
 function boot(): void {
   const intro = initIntro();
@@ -19,6 +20,7 @@ function boot(): void {
   initLineReveals(document, intro);
   initHeroPanel();
   initDashboardLoop();
+  initMarquee();
   document.fonts?.ready.then(() => ScrollTrigger.refresh());
 }
 

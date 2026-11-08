@@ -1,0 +1,60 @@
+---
+import { site } from '../content/site';
+---
+<section id="about" class="about" aria-labelledby="about-title">
+  <div class="container about__grid">
+    <p class="about__label mono-label">About</p>
+    <div class="about__main">
+      <h2 id="about-title" class="about__statement" data-reveal>{site.about.statement}</h2>
+      <p class="about__body" data-rise>{site.about.body}</p>
+      <ul class="about__values" data-values>
+        {site.about.values.map((v, i) => (
+          <li data-rise><span class="mono-label">0{i + 1}</span><span>{v}</span></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .about { padding-block: clamp(96px, 14vw, 200px) clamp(64px, 8vw, 120px); }
+  .about__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+    gap: 32px;
+  }
+  .about__label { color: var(--graphite); padding-top: 0.9em; }
+  .about__main { display: grid; gap: clamp(28px, 3vw, 44px); }
+  .about__statement {
+    max-width: 20ch;
+    font: 700 clamp(34px, 4.6vw, 68px)/1.08 var(--font-sans);
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  .about__body {
+    max-width: 52ch;
+    font-size: clamp(18px, 1.5vw, 21px);
+    line-height: 1.55;
+    color: var(--graphite);
+  }
+  .about__values {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 12px;
+  }
+  .about__values li {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+    padding-top: 18px;
+    border-top: 1px solid var(--obsidian);
+    font: 500 18px/1.3 var(--font-sans);
+  }
+  .about__values .mono-label { color: var(--signal-deep); }
+  @media (max-width: 900px) {
+    .about__grid { grid-template-columns: 1fr; gap: 16px; }
+    .about__label { padding-top: 0; }
+    .about__values { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>

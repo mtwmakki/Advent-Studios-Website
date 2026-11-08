@@ -7,18 +7,33 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
 
 /**
  * [data-reveal] headings rise line by line from a mask when they scroll into view;
- * [data-reveal="hero"] and [data-fade] blocks wait for `heroReady` (the intro) instead.
+ * [data-reveal="hero"] and [data-fade] blocks wait for `heroReady` (the intro) instead;
+ * [data-rise] blocks fade up when they scroll into view.
  * Hidden-before-reveal CSS only applies under html.js:not(.reduced) and has a 3s failsafe.
  */
 export function initLineReveals(root: ParentNode = document, heroReady: Promise<void> = Promise.resolve()): void {
   const heads = [...root.querySelectorAll<HTMLElement>('[data-reveal]')];
   const fades = [...root.querySelectorAll<HTMLElement>('[data-fade]')];
+  const rises = [...root.querySelectorAll<HTMLElement>('[data-rise]')];
   const reveal = (el: HTMLElement) => el.classList.add('is-revealed');
 
   if (prefersReducedMotion()) {
-    [...heads, ...fades].forEach(reveal);
+    [...heads, ...fades, ...rises].forEach(reveal);
     return;
   }
+
+  rises.forEach((el, i) => {
+    reveal(el);
+    gsap.from(el, {
+      y: 32,
+      opacity: 0,
+      duration: 1,
+      ease: 'expo.out',
+      delay: (i % 4) * 0.06,
+      clearProps: 'transform,opacity',
+      scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+    });
+  });
 
   heroReady.then(() => {
     fades.forEach((el, i) => {
