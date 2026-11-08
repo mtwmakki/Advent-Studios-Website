@@ -1,0 +1,106 @@
+---
+import Button from './Button.astro';
+import ServiceArt from './ServiceArt.astro';
+import { site } from '../content/site';
+import { waLink } from '../lib/whatsapp';
+---
+<section id="services" class="services" aria-labelledby="services-title">
+  <div class="container">
+    <div class="services__head">
+      <p class="mono-label services__label">Services</p>
+      <h2 id="services-title" class="services__title" data-reveal>What we do</h2>
+    </div>
+    <div class="services__stack">
+      {site.services.map((s, i) => (
+        <article class="service-card" data-service-card data-cursor-dark data-theme="dark" style={`--i:${i}`}>
+          <div class="service-card__body">
+            <span class="service-card__num mono-label">{s.n} / 0{site.services.length}</span>
+            <h3 class="service-card__title">{s.title}</h3>
+            <p class="service-card__text">{s.body}</p>
+            <div class="service-card__cta">
+              <Button href={waLink({ service: s.title })} label="Talk about this" variant="light" cursorText="Chat" external />
+            </div>
+          </div>
+          <div class="service-card__art" data-art>
+            <ServiceArt index={(i + 1) as 1 | 2 | 3 | 4} />
+          </div>
+          <div class="service-card__shade" data-shade aria-hidden="true"></div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .services { padding-block: clamp(80px, 10vw, 160px) clamp(40px, 6vw, 96px); }
+  .services__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+    gap: 32px;
+    align-items: end;
+    margin-bottom: clamp(40px, 5vw, 72px);
+  }
+  .services__label { color: var(--graphite); padding-bottom: 1em; }
+  .services__title {
+    font: 800 clamp(48px, 7vw, 112px)/1 var(--font-sans);
+    letter-spacing: -0.04em;
+  }
+
+  .services__stack { display: grid; gap: 24px; }
+  .service-card {
+    --pin: calc(96px + var(--i) * 14px);
+    position: sticky;
+    top: var(--pin);
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    min-height: min(70vh, 640px);
+    border-radius: var(--radius-card);
+    background: var(--obsidian);
+    color: var(--bone);
+    overflow: hidden;
+    transform-origin: 50% 0;
+    will-change: transform;
+  }
+  .service-card__body {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: clamp(28px, 4vw, 56px);
+  }
+  .service-card__num { color: var(--ash); }
+  .service-card__title {
+    max-width: 14ch;
+    margin-top: auto;
+    font: 700 clamp(32px, 4vw, 56px)/1.05 var(--font-sans);
+    letter-spacing: -0.03em;
+  }
+  .service-card__text { max-width: 44ch; color: var(--ash); font-size: 17px; line-height: 1.6; }
+  .service-card__cta { margin-top: 8px; }
+  .service-card__art { position: relative; display: grid; place-items: center; padding: 24px; }
+  .service-card__shade {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  @media (max-width: 767px) {
+    .services__head { grid-template-columns: 1fr; gap: 12px; }
+    .services__label { padding-bottom: 0; }
+    .services__stack { gap: 16px; }
+    .service-card {
+      --pin: calc(72px + var(--i) * 8px);
+      grid-template-columns: 1fr;
+      min-height: 80svh;
+      border-radius: 24px;
+    }
+    .service-card__body { padding: 28px 24px 8px; }
+    .service-card__title { margin-top: 12px; }
+    .service-card__art { padding: 0 24px 24px; max-height: 42svh; }
+    .service-card__art :global(svg) { max-height: 38svh; }
+  }
+</style>

@@ -6,6 +6,7 @@ import Menu from '../components/Menu.astro';
 import Hero from '../components/Hero.astro';
 import About from '../components/About.astro';
 import Marquee from '../components/Marquee.astro';
+import Services from '../components/Services.astro';
 import { site } from '../content/site';
 ---
 <Base title={site.meta.title} description={site.meta.description}>
@@ -16,8 +17,8 @@ import { site } from '../content/site';
     <Hero />
     <About />
     <Marquee />
-    {/* Temporary placeholder sections (replaced in Tasks 7-8) */}
-    <section id="services" style="min-height:100vh;"></section>
+    <Services />
+    {/* Temporary placeholder section (replaced in Task 8) */}
     <section id="faq" style="min-height:100vh;"></section>
   </main>
 </Base>

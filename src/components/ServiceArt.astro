@@ -1,0 +1,100 @@
+---
+// Card artwork built only from the Block A mark's vocabulary: the mark itself, its 45° cut,
+// solid blocks and the 10-unit grid. Greys with one small Signal element per card.
+interface Props {
+  index: 1 | 2 | 3 | 4;
+}
+const { index } = Astro.props;
+const MARK = '0,100 0,58 58,0 160,0 160,100 104,100 104,70 92,70 62,100';
+/** Places the 160×100 mark centred on (cx, cy) at scale s. */
+const at = (cx: number, cy: number, s: number, rot = 0) =>
+  `translate(${cx} ${cy}) rotate(${rot}) scale(${s}) translate(-80 -50)`;
+const id = `sa${index}`;
+const grid = Array.from({ length: 17 }, (_, i) => i * 10);
+const rows = Array.from({ length: 11 }, (_, i) => i * 10);
+const vertices = MARK.split(' ').map((p) => p.split(',').map(Number));
+---
+<div class="service-art" aria-hidden="true">
+  <svg viewBox="0 0 400 400" focusable="false">
+    <defs>
+      <radialGradient id={`${id}-glow`} cx="50%" cy="55%" r="50%">
+        <stop offset="0%" stop-color="#5C5C5A" stop-opacity="0.55" />
+        <stop offset="60%" stop-color="#2E2E2C" stop-opacity="0.25" />
+        <stop offset="100%" stop-color="#111110" stop-opacity="0" />
+      </radialGradient>
+      <linearGradient id={`${id}-metal`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#5C5C5A" />
+        <stop offset="100%" stop-color="#2E2E2C" />
+      </linearGradient>
+      <linearGradient id={`${id}-soft`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#9B9A94" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="#5C5C5A" stop-opacity="0.35" />
+      </linearGradient>
+    </defs>
+    <circle cx="200" cy="215" r="200" fill={`url(#${id}-glow)`} />
+
+    {index === 1 && (
+      // Web: the mark climbing a staircase of diminishing copies.
+      <g>
+        <g data-depth="0.4"><polygon points={MARK} transform={at(160, 285, 1.55)} fill={`url(#${id}-metal)`} stroke={`url(#${id}-metal)`} stroke-width="8" stroke-linejoin="round" /></g>
+        <g data-depth="0.8"><polygon points={MARK} transform={at(235, 190, 0.95)} fill={`url(#${id}-soft)`} stroke={`url(#${id}-soft)`} stroke-width="8" stroke-linejoin="round" /></g>
+        <g data-depth="1.2"><polygon points={MARK} transform={at(288, 122, 0.5)} fill="#FF4F1A" stroke="#FF4F1A" stroke-width="8" stroke-linejoin="round" /></g>
+      </g>
+    )}
+
+    {index === 2 && (
+      // UI/UX: the mark's outline traced over its own 10-unit construction grid.
+      <g transform={at(200, 210, 2)}>
+        <g data-depth="0.3" stroke="#2E2E2C" stroke-width="0.5">
+          {grid.map((x) => <line x1={x} y1="-10" x2={x} y2="110" />)}
+          {rows.map((y) => <line x1="-10" y1={y} x2="170" y2={y} />)}
+        </g>
+        <g data-depth="0.8">
+          <polygon points={MARK} fill="#1B1B1A" fill-opacity="0.6" stroke="#9B9A94" stroke-width="1.2" stroke-linejoin="round" />
+          <line x1="-8" y1="66" x2="66" y2="-8" stroke="#5C5C5A" stroke-width="0.6" stroke-dasharray="2 1.5" />
+          {vertices.map(([x, y], i) => (
+            <rect x={x - 2} y={y - 2} width="4" height="4" fill={i === 2 ? '#FF4F1A' : '#F2F1EC'} />
+          ))}
+        </g>
+      </g>
+    )}
+
+    {index === 3 && (
+      // Apps & automation: two marks interlocking along the diagonal, work flowing between them.
+      <g>
+        <g data-depth="0.5"><polygon points={MARK} transform={at(160, 175, 1.25)} fill={`url(#${id}-metal)`} stroke={`url(#${id}-metal)`} stroke-width="8" stroke-linejoin="round" /></g>
+        <g data-depth="0.9"><polygon points={MARK} transform={at(245, 255, 1.25, 180)} fill="none" stroke="#9B9A94" stroke-width="2.5" stroke-linejoin="round" /></g>
+        <g data-depth="1.3">
+          <line x1="96" y1="320" x2="320" y2="96" stroke="#5C5C5A" stroke-width="1.5" stroke-dasharray="4 6" />
+          <rect class="service-art__flow" x="194" y="194" width="12" height="12" fill="#FF4F1A" transform="rotate(45 200 200)" />
+        </g>
+      </g>
+    )}
+
+    {index === 4 && (
+      // Brand: the solid mark held by concentric offset outlines.
+      <g>
+        <g data-depth="0.3">
+          <polygon points={MARK} transform={at(200, 215, 2.25)} fill="none" stroke="#2E2E2C" stroke-width="0.8" stroke-linejoin="round" />
+          <polygon points={MARK} transform={at(200, 215, 1.95)} fill="none" stroke="#5C5C5A" stroke-width="0.9" stroke-linejoin="round" />
+          <polygon points={MARK} transform={at(200, 215, 1.65)} fill="none" stroke="#9B9A94" stroke-width="1" stroke-linejoin="round" />
+        </g>
+        <g data-depth="0.9"><polygon points={MARK} transform={at(200, 215, 1.3)} fill="#F2F1EC" stroke="#F2F1EC" stroke-width="8" stroke-linejoin="round" /></g>
+        <g data-depth="1.3"><rect x="282" y="132" width="14" height="14" rx="2" fill="#FF4F1A" /></g>
+      </g>
+    )}
+  </svg>
+</div>
+
+<style>
+  .service-art { position: relative; width: 100%; height: 100%; display: grid; place-items: center; }
+  .service-art svg { width: min(100%, 520px); height: auto; overflow: visible; }
+  .service-art__flow { animation: flow 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate; transform-box: fill-box; transform-origin: center; }
+  @keyframes flow {
+    from { translate: -90px 90px; }
+    to { translate: 90px -90px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .service-art__flow { animation: none; }
+  }
+</style>
