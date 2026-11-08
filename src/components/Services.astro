@@ -1,8 +1,10 @@
 ---
 import Button from './Button.astro';
-import ServiceArt from './ServiceArt.astro';
 import { site } from '../content/site';
 import { waLink } from '../lib/whatsapp';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const url = (path: string) => `${base}${path.replace(/^\//, '')}`;
 ---
 <section id="services" class="services" aria-labelledby="services-title">
   <div class="container">
@@ -21,8 +23,23 @@ import { waLink } from '../lib/whatsapp';
               <Button href={waLink({ service: s.title })} label="Talk about this" variant="light" cursorText="Chat" external />
             </div>
           </div>
-          <div class="service-card__art" data-art>
-            <ServiceArt index={(i + 1) as 1 | 2 | 3 | 4} />
+          <div class="service-card__media" data-card-media aria-hidden="true">
+            {s.video ? (
+              <video
+                class="service-card__video"
+                data-card-video
+                muted
+                loop
+                playsinline
+                preload="none"
+                poster={s.video.poster ? url(s.video.poster) : undefined}
+              >
+                {s.video.webm && <source data-src={url(s.video.webm)} type="video/webm" />}
+                <source data-src={url(s.video.mp4)} type="video/mp4" />
+              </video>
+            ) : (
+              <div class="service-card__placeholder" data-media-placeholder></div>
+            )}
           </div>
           <div class="service-card__shade" data-shade aria-hidden="true"></div>
         </article>
@@ -52,7 +69,7 @@ import { waLink } from '../lib/whatsapp';
     position: sticky;
     top: var(--pin);
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     min-height: min(70vh, 640px);
     border-radius: var(--radius-card);
     background: var(--obsidian);
@@ -78,7 +95,32 @@ import { waLink } from '../lib/whatsapp';
   }
   .service-card__text { max-width: 44ch; color: var(--ash); font-size: 17px; line-height: 1.6; }
   .service-card__cta { margin-top: 8px; }
-  .service-card__art { position: relative; display: grid; place-items: center; padding: 24px; }
+
+  /* Media fills the card's right half edge to edge and fades into the black on its left. */
+  .service-card__media {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 50%;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28%);
+    mask-image: linear-gradient(to right, transparent 0, #000 28%);
+  }
+  .service-card__video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .service-card__placeholder {
+    position: absolute;
+    inset: -10%;
+    background:
+      radial-gradient(45% 45% at 58% 52%, rgba(92, 92, 90, 0.42), transparent 70%),
+      radial-gradient(30% 30% at 72% 30%, rgba(155, 154, 148, 0.16), transparent 70%),
+      radial-gradient(35% 35% at 40% 75%, rgba(46, 46, 44, 0.9), transparent 70%);
+    animation: card-drift 16s ease-in-out infinite alternate;
+  }
+  .service-card:nth-child(2n) .service-card__placeholder { animation-duration: 19s; animation-direction: alternate-reverse; }
+  @keyframes card-drift {
+    to { transform: translate3d(-6%, 5%, 0) scale(1.1); }
+  }
   .service-card__shade {
     position: absolute;
     inset: 0;
@@ -100,7 +142,16 @@ import { waLink } from '../lib/whatsapp';
     }
     .service-card__body { padding: 28px 24px 8px; }
     .service-card__title { margin-top: 12px; }
-    .service-card__art { padding: 0 24px 24px; max-height: 42svh; }
-    .service-card__art :global(svg) { max-height: 38svh; }
+    .service-card__media {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      max-height: 44svh;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 30%);
+      mask-image: linear-gradient(to bottom, transparent 0, #000 30%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .service-card__placeholder { animation: none; }
   }
 </style>

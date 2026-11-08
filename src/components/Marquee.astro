@@ -4,13 +4,8 @@ const words = ['Web design', 'UI/UX', 'Apps', 'Automation', 'Brand'];
 <section id="marquee" class="marquee" aria-label="What we do">
   <div class="marquee__track" data-marquee-track>
     <p class="marquee__item" data-marquee-item>
-      {words.map((w) => (
-        <>
-          <span class="marquee__word">{w}</span>
-          <svg class="marquee__sep" viewBox="-4 -4 168 108" aria-hidden="true" focusable="false">
-            <polygon points="0,100 0,58 58,0 160,0 160,100 104,100 104,70 92,70 62,100" fill="currentColor" stroke="currentColor" stroke-width="8" stroke-linejoin="round" />
-          </svg>
-        </>
+      {words.map((w, i) => (
+        <span class:list={['marquee__word', { 'is-outline': i % 2 === 1 }]}>{w}</span>
       ))}
     </p>
   </div>
@@ -37,10 +32,8 @@ const words = ['Web design', 'UI/UX', 'Apps', 'Automation', 'Brand'];
     letter-spacing: -0.045em;
     white-space: nowrap;
   }
-  .marquee__sep {
-    width: 0.62em;
-    height: auto;
-    flex-shrink: 0;
-    color: var(--ash);
+  .marquee__word.is-outline {
+    color: transparent;
+    -webkit-text-stroke: max(1.5px, 0.012em) var(--obsidian);
   }
 </style>

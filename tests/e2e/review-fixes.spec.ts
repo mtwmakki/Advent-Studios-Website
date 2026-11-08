@@ -55,12 +55,6 @@ test('keyboard focus moves to the section a nav link points to', async ({ page }
   expect(await scrollY(page)).toBeGreaterThan(y - 400);
 });
 
-test('marquee separators are not Signal orange', async ({ page }) => {
-  await page.goto('');
-  const color = await page.locator('#marquee .marquee__sep').first().evaluate((el) => getComputedStyle(el).color);
-  expect(color).not.toBe('rgb(255, 79, 26)');
-});
-
 test('re-opening the menu during its close animation leaves it open', async ({ page }) => {
   await ready(page);
   await scrollTo(page, 600);

@@ -11,6 +11,7 @@ import { initDashboardLoop } from './dashboard';
 import { initMarquee } from './marquee';
 import { initServiceStack } from './stack';
 import { initFaq } from './faq';
+import { initCardVideos } from './video';
 
 function boot(): void {
   const intro = initIntro();
@@ -26,6 +27,7 @@ function boot(): void {
     initDashboardLoop();
     initMarquee();
     initServiceStack();
+    initCardVideos();
     initFaq();
     ScrollTrigger.refresh();
   };

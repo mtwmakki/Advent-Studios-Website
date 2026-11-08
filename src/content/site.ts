@@ -3,10 +3,19 @@
  * Fill in the [placeholders] before launch.
  */
 
+/** A looping card video. Paths are relative to /public (e.g. 'videos/web.mp4'). */
+export interface CardVideo {
+  mp4: string;
+  webm?: string;
+  poster?: string;
+}
+
 export interface Service {
   n: string;
   title: string;
   body: string;
+  /** Add once the clip exists; until then the card shows a calm placeholder glow. */
+  video?: CardVideo;
 }
 
 export interface FaqItem {
