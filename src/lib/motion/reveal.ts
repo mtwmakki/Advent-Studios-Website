@@ -38,7 +38,7 @@ export function initLineReveals(root: ParentNode = document, heroReady: Promise<
   heroReady.then(() => {
     fades.forEach((el, i) => {
       reveal(el);
-      gsap.from(el, { y: 28, opacity: 0, duration: 1, ease: 'expo.out', delay: 0.35 + i * 0.1, clearProps: 'transform,opacity' });
+      gsap.from(el, { y: 28, opacity: 0, duration: 1, ease: 'expo.out', delay: 0.15 + i * 0.08, clearProps: 'transform,opacity' });
     });
   });
 

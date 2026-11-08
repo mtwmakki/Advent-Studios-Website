@@ -15,16 +15,22 @@ import { initFaq } from './faq';
 function boot(): void {
   const intro = initIntro();
   initSmoothScroll();
-  initCursor();
   initRollingText();
-  initMagnetic();
   initNav();
   initLineReveals(document, intro);
   initHeroPanel();
-  initDashboardLoop();
-  initMarquee();
-  initServiceStack();
-  initFaq();
+  // Below-the-fold and pointer-only setup waits for an idle moment so first paint stays fast.
+  const later = () => {
+    initCursor();
+    initMagnetic();
+    initDashboardLoop();
+    initMarquee();
+    initServiceStack();
+    initFaq();
+    ScrollTrigger.refresh();
+  };
+  if ('requestIdleCallback' in window) window.requestIdleCallback(later, { timeout: 600 });
+  else setTimeout(later, 200);
   document.fonts?.ready.then(() => ScrollTrigger.refresh());
 }
 

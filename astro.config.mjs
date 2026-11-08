@@ -6,4 +6,5 @@ export default defineConfig({
   base: '/Advent-Studios-Website',
   trailingSlash: 'ignore',
   output: 'static',
+  build: { inlineStylesheets: 'always' },
 });

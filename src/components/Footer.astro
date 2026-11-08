@@ -24,7 +24,10 @@ import { waLink } from '../lib/whatsapp';
     </div>
     <div class="footer__bottom">
       <Logo variant="light" />
-      <p class="mono-label">{site.footer.smallPrint}</p>
+      <p class="mono-label footer__small">
+        <span>{site.footer.smallPrint}</span>
+        <a href={`${import.meta.env.BASE_URL.replace(/\/?$/, '/')}third-party-licenses.txt`}>Licenses</a>
+      </p>
     </div>
   </div>
 </footer>
@@ -79,6 +82,9 @@ import { waLink } from '../lib/whatsapp';
     transition: color 0.3s;
   }
   .footer__socials a:hover { color: var(--bone); }
+  .footer__small { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+  .footer__small a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; color: var(--ash); text-underline-offset: 4px; }
+  .footer__small a:hover { color: var(--bone); }
   .footer__bottom {
     display: flex;
     flex-wrap: wrap;

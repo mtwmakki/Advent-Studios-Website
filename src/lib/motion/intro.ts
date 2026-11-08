@@ -25,12 +25,14 @@ export function initIntro(): Promise<void> {
       root.classList.remove('intro-on');
       resolve();
     };
+    // Resolve as the curtain starts to lift so the hero rises underneath it.
     const a = el.querySelector('[data-intro-piece="a"]');
     const b = el.querySelector('[data-intro-piece="b"]');
     gsap
       .timeline({ defaults: { ease: 'expo.out' }, onComplete: finish })
       .fromTo(a, { x: -26, y: -26, opacity: 0 }, { x: 0, y: 0, opacity: 1, duration: 0.6 }, 0)
       .fromTo(b, { x: 26, y: 26, opacity: 0 }, { x: 0, y: 0, opacity: 1, duration: 0.6 }, 0.05)
-      .to(el, { yPercent: -100, duration: 0.5, ease: 'expo.inOut' }, '+=0.15');
+      .call(resolve, undefined, '+=0.15')
+      .to(el, { yPercent: -100, duration: 0.5, ease: 'expo.inOut' }, '<');
   });
 }
