@@ -82,3 +82,18 @@ ul, ol { padding: 0; list-style: none; }
 [data-roll]:is(:hover, :focus-visible) > span {
   transform: translateY(-100%);
 }
+
+/* Cursor follower (mouse-follower), recoloured to the brand. */
+.mf-cursor { color: var(--obsidian); z-index: 1000; }
+.mf-cursor.-dark { color: var(--bone); }
+.mf-cursor:before { transform: scale(0.25); }
+.mf-cursor.-pointer:before { transform: scale(0.5); }
+.mf-cursor.-text:before { opacity: 1; transform: scale(1.85); }
+.mf-cursor-text {
+  color: var(--bone);
+  font: 500 11px/1.2 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  width: 80px; height: 40px; left: -40px; top: -20px;
+}
+.mf-cursor.-dark .mf-cursor-text { color: var(--obsidian); }

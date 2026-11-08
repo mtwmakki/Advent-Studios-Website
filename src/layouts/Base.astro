@@ -41,5 +41,8 @@ const ogImage = new URL(`${base}og.png`, Astro.site);
   </head>
   <body>
     <slot />
+    <script>
+      import '../lib/motion/main';
+    </script>
   </body>
 </html>
