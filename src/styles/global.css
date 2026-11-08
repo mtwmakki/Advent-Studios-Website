@@ -63,3 +63,22 @@ ul, ol { padding: 0; list-style: none; }
     scroll-behavior: auto !important;
   }
 }
+
+/* Rolling text: two stacked copies slide up one line on hover/focus of the link or button. */
+[data-roll] {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  height: 1.15em;
+  line-height: 1.15;
+  overflow: hidden;
+  vertical-align: top;
+}
+[data-roll] > span {
+  display: block;
+  transition: transform 0.55s var(--ease-out);
+}
+:is(a, button):is(:hover, :focus-visible) [data-roll] > span,
+[data-roll]:is(:hover, :focus-visible) > span {
+  transform: translateY(-100%);
+}

@@ -1,6 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import Logo from '../components/Logo.astro';
+import Button from '../components/Button.astro';
+import { waLink } from '../lib/whatsapp';
 ---
 <Base
   title="Advent Studio | Design & development studio for apps, web and brands"
@@ -8,5 +10,12 @@ import Logo from '../components/Logo.astro';
 >
   <main class="container">
     <Logo />
+    {/* Temporary button row (removed in Task 5) */}
+    <div style="display:flex;flex-wrap:wrap;gap:16px;padding:48px 0;">
+      <Button href={waLink()} label="Book a call" variant="signal" size="lg" />
+      <Button href={waLink()} label="Book a call" variant="dark" />
+      <div style="background:#111110;padding:16px;border-radius:16px;"><Button href={waLink()} label="Talk about this" variant="light" /></div>
+      <Button href={waLink()} label="See more" variant="ghost" />
+    </div>
   </main>
 </Base>
