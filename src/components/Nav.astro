@@ -22,9 +22,11 @@ import { site } from '../content/site';
   </div>
 </header>
 
-<button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu" data-magnetic="0.3">
-  <span class="menu-toggle__lines" aria-hidden="true" data-magnetic-inner>
-    <span></span><span></span>
+<button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+  <span class="menu-toggle__mag" data-magnetic="0.3">
+    <span class="menu-toggle__lines" aria-hidden="true" data-magnetic-inner>
+      <span></span><span></span>
+    </span>
   </span>
 </button>
 
@@ -86,6 +88,7 @@ import { site } from '../content/site';
     transition: transform 0.45s var(--ease-out), visibility 0s, background-color 0.3s;
   }
   :global(html.menu-open) .menu-toggle { background: var(--bone); color: var(--obsidian); }
+  .menu-toggle__mag { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%; }
   .menu-toggle__lines { position: relative; width: 22px; height: 10px; display: block; }
   .menu-toggle__lines span {
     position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px;

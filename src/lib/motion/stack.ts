@@ -11,7 +11,9 @@ gsap.registerPlugin(ScrollTrigger);
  */
 export function initServiceStack(): void {
   const cards = [...document.querySelectorAll<HTMLElement>('[data-service-card]')];
-  if (!cards.length || prefersReducedMotion()) return;
+  if (!cards.length) return;
+  revealFocusedCard(cards);
+  if (prefersReducedMotion()) return;
 
   cards.forEach((card, i) => {
     const next = cards[i + 1];
@@ -46,6 +48,34 @@ export function initServiceStack(): void {
     });
     card.addEventListener('pointerleave', () => {
       layers.forEach(({ el }) => gsap.to(el, { x: 0, y: 0, duration: 1, ease: 'elastic.out(1, 0.5)' }));
+    });
+  });
+}
+
+/** Document top of an element in normal flow (sticky offsets ignored by measuring the stack). */
+function docTop(el: HTMLElement): number {
+  let y = 0;
+  for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) y += n.offsetTop;
+  return y;
+}
+
+/**
+ * Sticky cards cover the ones before them, so a keyboard user tabbing into an earlier card could
+ * land on a hidden button. On keyboard focus, scroll so that card is the one on top of the stack.
+ */
+function revealFocusedCard(cards: HTMLElement[]): void {
+  const stack = cards[0].parentElement as HTMLElement;
+  cards.forEach((card, i) => {
+    card.addEventListener('focusin', (e) => {
+      const el = e.target as HTMLElement;
+      if (!el.matches(':focus-visible')) return;
+      const gap = parseFloat(getComputedStyle(stack).rowGap) || 0;
+      let y = docTop(stack);
+      for (let j = 0; j < i; j++) y += cards[j].offsetHeight + gap;
+      const pin = parseFloat(getComputedStyle(card).top) || 0;
+      const top = Math.max(0, y - pin);
+      if (window.__lenis) window.__lenis.scrollTo(top, { duration: 0.8, force: true });
+      else window.scrollTo({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     });
   });
 }

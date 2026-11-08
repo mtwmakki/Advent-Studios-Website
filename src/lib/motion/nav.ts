@@ -6,15 +6,20 @@ const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1
 
 function scrollToTarget(hash: string): void {
   const lenis = window.__lenis;
-  const target = hash === '#top' ? 0 : document.querySelector<HTMLElement>(hash);
-  if (target === null) return;
+  const section = document.querySelector<HTMLElement>(hash);
+  if (!section) return;
+  const target = hash === '#top' ? 0 : section;
   if (lenis) {
-    lenis.scrollTo(target, { offset: hash === '#top' ? 0 : -24, duration: 1.2 });
-    return;
+    lenis.start();
+    lenis.scrollTo(target, { offset: hash === '#top' ? 0 : -24, duration: 1.2, force: true });
+  } else {
+    const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
+    if (target === 0) window.scrollTo({ top: 0, behavior });
+    else section.scrollIntoView({ behavior, block: 'start' });
   }
-  const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
-  if (target === 0) window.scrollTo({ top: 0, behavior });
-  else target.scrollIntoView({ behavior, block: 'start' });
+  // Move keyboard focus with the scroll so the next Tab continues from the section.
+  if (!section.hasAttribute('tabindex')) section.setAttribute('tabindex', '-1');
+  section.focus({ preventScroll: true });
 }
 
 export function initNav(): void {
@@ -48,6 +53,7 @@ export function initNav(): void {
   const openMenu = () => {
     if (open) return;
     open = true;
+    gsap.killTweensOf(menu);
     root.classList.add('menu-open');
     toggle.setAttribute('aria-expanded', 'true');
     toggle.setAttribute('aria-label', 'Close menu');
@@ -73,7 +79,9 @@ export function initNav(): void {
     open = false;
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-label', 'Open menu');
+    gsap.killTweensOf(menu);
     const done = () => {
+      if (open) return;
       menu.hidden = true;
       root.classList.remove('menu-open');
       document.body.style.overflow = '';

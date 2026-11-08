@@ -28,6 +28,11 @@ const MARK = '0,100 0,58 58,0 160,0 160,100 104,100 104,70 92,70 62,100';
     color: var(--obsidian);
     pointer-events: none;
   }
-  :global(html.js.intro-on) .intro { display: grid; }
+  :global(html.js.intro-on) .intro {
+    display: grid;
+    /* Failsafe: never cover the page if the script bundle fails to run. */
+    animation: intro-failsafe 0s linear 2.6s forwards;
+  }
+  @keyframes intro-failsafe { to { visibility: hidden; } }
   .intro__mark { width: clamp(96px, 14vw, 160px); height: auto; overflow: visible; }
 </style>
