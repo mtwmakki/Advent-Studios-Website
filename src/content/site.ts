@@ -98,7 +98,7 @@ export const site = {
   ] satisfies FaqItem[],
 
   footer: {
-    headline: "Let's talk.",
+    headline: 'Let’s talk.',
     cta: 'Chat on WhatsApp',
     smallPrint: '© 2026 Advent Studio',
   },

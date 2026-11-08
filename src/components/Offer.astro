@@ -1,0 +1,62 @@
+---
+import Button from './Button.astro';
+import { site } from '../content/site';
+import { waLink } from '../lib/whatsapp';
+---
+<section id="offer" class="offer" aria-labelledby="offer-title">
+  <div class="container">
+    <div class="offer__panel">
+      <p class="offer__status mono-label" data-rise>
+        <span class="offer__dot" aria-hidden="true"></span>
+        {site.offer.status}
+      </p>
+      <h2 id="offer-title" class="offer__title" data-reveal>{site.offer.heading}</h2>
+      <p class="offer__terms" data-rise>{site.offer.terms}</p>
+      <div class="offer__cta" data-rise>
+        <Button href={waLink()} label={site.offer.cta} variant="signal" size="lg" external />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .offer { padding-block: clamp(48px, 8vw, 120px); }
+  .offer__panel {
+    display: grid;
+    justify-items: center;
+    gap: clamp(20px, 2.4vw, 32px);
+    padding: clamp(48px, 8vw, 120px) clamp(24px, 6vw, 96px);
+    border: 1px solid var(--mist);
+    border-radius: var(--radius-card);
+    text-align: center;
+    background: #F7F6F2;
+  }
+  .offer__status { display: inline-flex; align-items: center; gap: 10px; color: var(--graphite); }
+  .offer__dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--signal);
+  }
+  .offer__dot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--signal);
+    animation: pulse 2s ease-out infinite;
+  }
+  @keyframes pulse {
+    from { transform: scale(1); opacity: 0.6; }
+    to { transform: scale(3.2); opacity: 0; }
+  }
+  .offer__title {
+    max-width: 16ch;
+    font: 800 clamp(40px, 6vw, 96px)/1.02 var(--font-sans);
+    letter-spacing: -0.04em;
+    text-wrap: balance;
+  }
+  .offer__terms { font: 500 clamp(20px, 2vw, 28px)/1.3 var(--font-sans); color: var(--graphite); }
+  .offer__cta { margin-top: 8px; }
+</style>

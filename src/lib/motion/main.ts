@@ -10,6 +10,7 @@ import { initHeroPanel } from './hero';
 import { initDashboardLoop } from './dashboard';
 import { initMarquee } from './marquee';
 import { initServiceStack } from './stack';
+import { initFaq } from './faq';
 
 function boot(): void {
   const intro = initIntro();
@@ -23,6 +24,7 @@ function boot(): void {
   initDashboardLoop();
   initMarquee();
   initServiceStack();
+  initFaq();
   document.fonts?.ready.then(() => ScrollTrigger.refresh());
 }
 

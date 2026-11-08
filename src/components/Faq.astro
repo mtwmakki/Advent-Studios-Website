@@ -1,0 +1,85 @@
+---
+import { site } from '../content/site';
+---
+<section id="faq" class="faq" aria-labelledby="faq-title">
+  <div class="container faq__grid">
+    <div class="faq__head">
+      <p class="mono-label faq__label">FAQ</p>
+      <h2 id="faq-title" class="faq__title" data-reveal>Questions</h2>
+    </div>
+    <ul class="faq__list" data-faq>
+      {site.faq.map((item, i) => (
+        <li class="faq__item">
+          <h3 class="faq__q">
+            <button type="button" id={`faq-q-${i + 1}`} aria-expanded="false" aria-controls={`faq-${i + 1}`} data-faq-toggle>
+              <span>{item.q}</span>
+              <span class="faq__icon" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div id={`faq-${i + 1}`} class="faq__a" role="region" aria-labelledby={`faq-q-${i + 1}`} data-faq-panel>
+            <p>{item.a}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .faq { padding-block: clamp(64px, 10vw, 160px); }
+  .faq__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 32px;
+  }
+  .faq__label { color: var(--graphite); margin-bottom: 16px; }
+  .faq__title { font: 800 clamp(40px, 4.6vw, 72px)/1 var(--font-sans); letter-spacing: -0.04em; overflow-wrap: anywhere; }
+  .faq__list { border-top: 1px solid var(--obsidian); }
+  .faq__item { border-bottom: 1px solid var(--mist); }
+  .faq__q button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    width: 100%;
+    min-height: 72px;
+    padding: 20px 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    font: 600 clamp(19px, 1.8vw, 24px)/1.3 var(--font-sans);
+    letter-spacing: -0.01em;
+    cursor: pointer;
+  }
+  .faq__icon {
+    position: relative;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid var(--obsidian);
+    transition: transform 0.5s var(--ease-out), background-color 0.3s, color 0.3s;
+  }
+  .faq__icon::before, .faq__icon::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 14px; height: 1.5px;
+    background: currentColor;
+    transform: translate(-50%, -50%);
+  }
+  .faq__icon::after { transform: translate(-50%, -50%) rotate(90deg); }
+  .faq__q button:hover .faq__icon { background: var(--obsidian); color: var(--bone); }
+  .faq__q button[aria-expanded='true'] .faq__icon { transform: rotate(135deg); background: var(--obsidian); color: var(--bone); }
+  .faq__a { overflow: hidden; }
+  .faq__a p {
+    max-width: 60ch;
+    padding: 0 0 28px;
+    color: var(--graphite);
+    font-size: 18px;
+    line-height: 1.6;
+  }
+  @media (max-width: 900px) {
+    .faq__grid { grid-template-columns: 1fr; gap: 24px; }
+  }
+</style>
