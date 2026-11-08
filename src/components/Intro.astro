@@ -1,0 +1,33 @@
+---
+// The Block A split along a line parallel to its 45° cut; the two pieces slide together.
+const MARK = '0,100 0,58 58,0 160,0 160,100 104,100 104,70 92,70 62,100';
+---
+<div id="intro" class="intro" aria-hidden="true">
+  <svg class="intro__mark" viewBox="-30 -30 220 160" focusable="false">
+    <defs>
+      <clipPath id="intro-cut-a"><polygon points="-40,-40 150,-40 -40,150" /></clipPath>
+      <clipPath id="intro-cut-b"><polygon points="150,-40 200,-40 200,150 -40,150" /></clipPath>
+    </defs>
+    <g data-intro-piece="a" clip-path="url(#intro-cut-a)">
+      <polygon points={MARK} fill="currentColor" stroke="currentColor" stroke-width="8" stroke-linejoin="round" />
+    </g>
+    <g data-intro-piece="b" clip-path="url(#intro-cut-b)">
+      <polygon points={MARK} fill="currentColor" stroke="currentColor" stroke-width="8" stroke-linejoin="round" />
+    </g>
+  </svg>
+</div>
+
+<style>
+  .intro {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: none;
+    place-items: center;
+    background: var(--bone);
+    color: var(--obsidian);
+    pointer-events: none;
+  }
+  :global(html.js.intro-on) .intro { display: grid; }
+  .intro__mark { width: clamp(96px, 14vw, 160px); height: auto; overflow: visible; }
+</style>

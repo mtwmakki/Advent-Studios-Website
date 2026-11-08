@@ -18,6 +18,11 @@ export const site = {
   /** WhatsApp number with country code, digits only (e.g. '60123456789'). Empty until launch. */
   whatsappNumber: '',
   email: '[studio email]',
+  nav: [
+    { label: 'About', href: '#about' },
+    { label: 'Services', href: '#services' },
+    { label: 'FAQ', href: '#faq' },
+  ],
   socials: [
     { label: 'LinkedIn', href: '#' },
     { label: 'Instagram', href: '#' },

@@ -1,0 +1,83 @@
+---
+import Button from './Button.astro';
+import { site } from '../content/site';
+import { waLink } from '../lib/whatsapp';
+---
+<div id="menu" class="menu" role="dialog" aria-modal="true" aria-label="Menu" hidden data-cursor-dark data-theme="dark">
+  <div class="menu__inner container">
+    <nav aria-label="Menu links">
+      <ul class="menu__links">
+        {site.nav.map((l, i) => (
+          <li>
+            <a href={l.href} data-anchor data-menu-link>
+              <span class="menu__num mono-label" aria-hidden="true">0{i + 1}</span>
+              <span class="menu__mask"><span class="menu__word" data-menu-word><span data-roll>{l.label}</span></span></span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <div class="menu__foot" data-menu-foot>
+      <Button href={waLink()} label="Book a call" variant="signal" size="lg" external />
+      <div class="menu__contact">
+        <a class="menu__email" href={`mailto:${site.email}`}>{site.email}</a>
+        <ul class="menu__socials">
+          {site.socials.map((s) => <li><a href={s.href}><span data-roll>{s.label}</span></a></li>)}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .menu {
+    position: fixed;
+    inset: 0;
+    z-index: 800;
+    background: var(--obsidian);
+    color: var(--bone);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .menu__inner {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 48px;
+    padding-top: calc(var(--nav-h) + 24px);
+    padding-bottom: 40px;
+  }
+  .menu__links { display: grid; gap: 4px; }
+  .menu__links a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 18px;
+    min-height: 44px;
+    text-decoration: none;
+  }
+  .menu__num { color: var(--ash); }
+  .menu__mask { display: block; overflow: hidden; padding-bottom: 0.06em; }
+  .menu__word {
+    display: block;
+    font: 700 clamp(48px, 8vw, 96px)/1.05 var(--font-sans);
+    letter-spacing: -0.035em;
+  }
+  .menu__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    border-top: 1px solid var(--border-dark);
+    padding-top: 28px;
+  }
+  .menu__contact { display: grid; gap: 12px; justify-items: end; }
+  .menu__email { font: 500 18px/1.4 var(--font-sans); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+  .menu__socials { display: flex; gap: 24px; }
+  .menu__socials a { font: 500 12px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ash); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+  .menu__socials a:hover { color: var(--bone); }
+  @media (max-width: 767px) {
+    .menu__contact { justify-items: start; }
+  }
+</style>

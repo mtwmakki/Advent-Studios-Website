@@ -1,0 +1,106 @@
+---
+import Logo from './Logo.astro';
+import Button from './Button.astro';
+import { waLink } from '../lib/whatsapp';
+import { site } from '../content/site';
+---
+<header id="site-nav" class="nav">
+  <div class="nav__bar container">
+    <a class="nav__home" href="#top" data-anchor aria-label="Advent Studio, back to top">
+      <Logo />
+    </a>
+    <div class="nav__right">
+      <nav aria-label="Main" class="nav__links">
+        <ul>
+          {site.nav.map((l) => (
+            <li><a href={l.href} data-anchor><span data-roll>{l.label}</span></a></li>
+          ))}
+        </ul>
+      </nav>
+      <Button href={waLink()} label="Book a call" variant="dark" external class="nav__cta" />
+    </div>
+  </div>
+</header>
+
+<button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu" data-magnetic="0.3">
+  <span class="menu-toggle__lines" aria-hidden="true" data-magnetic-inner>
+    <span></span><span></span>
+  </span>
+</button>
+
+<style>
+  .nav {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 50;
+  }
+  .nav__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--nav-h);
+    transition: opacity 0.3s var(--ease-out), visibility 0s linear 0s;
+  }
+  :global(html.nav-collapsed) .nav__bar {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s var(--ease-out), visibility 0s linear 0.3s;
+  }
+  .nav__home { display: inline-flex; min-height: 44px; align-items: center; text-decoration: none; border-radius: 8px; }
+  .nav__right { display: flex; align-items: center; gap: clamp(20px, 3vw, 40px); }
+  .nav__links ul { display: flex; gap: clamp(20px, 2.6vw, 36px); }
+  .nav__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font: 500 15px/1 var(--font-sans);
+    text-decoration: none;
+  }
+
+  .menu-toggle {
+    position: fixed;
+    top: 20px;
+    right: var(--gutter);
+    z-index: 820;
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--obsidian);
+    color: var(--bone);
+    cursor: pointer;
+    transform: scale(0);
+    visibility: hidden;
+    transition: transform 0.45s var(--ease-out), visibility 0s linear 0.45s, background-color 0.3s;
+  }
+  :global(html.nav-collapsed) .menu-toggle,
+  :global(html.menu-open) .menu-toggle {
+    transform: scale(1);
+    visibility: visible;
+    transition: transform 0.45s var(--ease-out), visibility 0s, background-color 0.3s;
+  }
+  :global(html.menu-open) .menu-toggle { background: var(--bone); color: var(--obsidian); }
+  .menu-toggle__lines { position: relative; width: 22px; height: 10px; display: block; }
+  .menu-toggle__lines span {
+    position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px;
+    background: currentColor;
+    transition: transform 0.45s var(--ease-out), top 0.45s var(--ease-out);
+  }
+  .menu-toggle__lines span:first-child { top: 0; }
+  .menu-toggle__lines span:last-child { top: 8px; }
+  .menu-toggle[aria-expanded='true'] .menu-toggle__lines span:first-child { top: 4px; transform: rotate(45deg); }
+  .menu-toggle[aria-expanded='true'] .menu-toggle__lines span:last-child { top: 4px; transform: rotate(-45deg); }
+
+  @media (max-width: 767px) {
+    .nav__right { display: none; }
+    .menu-toggle {
+      top: 16px;
+      transform: scale(1);
+      visibility: visible;
+      transition: background-color 0.3s;
+    }
+  }
+</style>
