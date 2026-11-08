@@ -4,8 +4,7 @@
 @import '@fontsource/funnel-display/latin-500.css';
 @import '@fontsource/funnel-display/latin-700.css';
 @import '@fontsource/funnel-display/latin-800.css';
-@import '@fontsource/jetbrains-mono/latin-400.css';
-@import '@fontsource/jetbrains-mono/latin-500.css';
+@import '@fontsource-variable/geist-mono/index.css';
 
 @font-face { font-family: 'Srotone'; src: url('../assets/fonts/srotone-300.woff2') format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Srotone'; src: url('../assets/fonts/srotone-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
@@ -24,11 +23,11 @@
   --surface-dark: #1B1B1A;
   --border-dark: #2E2E2C;
 
-  /* Display: Srotone for headlines only. It lacks % & * - @ ^ { } ~ · — → ®; Funnel Display fills those glyphs. */
+  /* Display: Srotone for the logo wordmark and hero headline only. It lacks % & * - @ ^ { } ~ · — → ®; Funnel Display fills those glyphs. */
   --font-display: 'Srotone', 'Funnel Display', system-ui, sans-serif;
   /* Text: Geist for everything people read or tap. */
   --font-sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, monospace;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --radius-panel: 24px;

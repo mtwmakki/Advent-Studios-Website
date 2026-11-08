@@ -7,11 +7,7 @@ import { waLink } from '../lib/whatsapp';
 <footer class="footer" data-cursor-dark data-theme="dark">
   <div class="container">
     <div class="footer__cta">
-      <h2 class="footer__title" data-reveal>
-        {site.footer.headline.split('’').map((part, i, all) => (
-          <>{part}{i < all.length - 1 && <span class="footer__apos">’</span>}</>
-        ))}
-      </h2>
+      <h2 class="footer__title" data-reveal>{site.footer.headline}</h2>
       <Button href={waLink()} label={site.footer.cta} variant="signal" size="xl" external />
     </div>
     <div class="footer__info">
@@ -47,11 +43,9 @@ import { waLink } from '../lib/whatsapp';
     gap: 32px;
   }
   .footer__title {
-    font: 800 clamp(72px, 14vw, 240px)/0.95 var(--font-display);
+    font: 600 clamp(72px, 14vw, 240px)/0.95 var(--font-sans);
     letter-spacing: -0.05em;
   }
-  /* Srotone's ExtraBold apostrophe is a wedge; borrow the fallback face's for this one glyph. */
-  .footer__apos { font-family: 'Funnel Display', var(--font-sans); letter-spacing: 0; }
   .footer__info {
     display: flex;
     flex-wrap: wrap;
