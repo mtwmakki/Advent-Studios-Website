@@ -1,7 +1,6 @@
 ---
 import '../styles/tokens.css';
 import '../styles/global.css';
-import srotone400 from '../assets/fonts/srotone-400.woff2?url';
 import srotone800 from '../assets/fonts/srotone-800.woff2?url';
 
 interface Props {
@@ -23,7 +22,6 @@ const ogImage = new URL(`${base}og.png`, Astro.site);
     <meta name="theme-color" content="#F2F1EC" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
-    <link rel="preload" href={srotone400} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={srotone800} as="font" type="font/woff2" crossorigin />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
