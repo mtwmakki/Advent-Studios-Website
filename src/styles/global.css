@@ -112,3 +112,29 @@ html.js:not(.reduced) :is([data-reveal], [data-fade], [data-rise]):not(.is-revea
 .reveal-line { padding-bottom: 0.08em; margin-bottom: -0.08em; }
 /* Line masks get breathing room so tall glyphs (Srotone's i-dots, accents) are never clipped. */
 .reveal-line-mask { padding-block: 0.18em; margin-block: -0.18em; }
+
+/* Layering for the Work melt and the Signal thread.
+   Sections sit above the thread, so text, cards and panels cover it. The footer has no stacking
+   context, which lets the thread run over its dark background while its title and button stay on top. */
+main > section { position: relative; z-index: 1; }
+footer.footer { position: relative; }
+.footer__cta > * { position: relative; z-index: 1; }
+.thread {
+  position: absolute;
+  left: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.thread path {
+  fill: none;
+  stroke: var(--signal);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.melt-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}

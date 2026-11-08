@@ -55,7 +55,10 @@ export const site = {
   work: {
     label: 'Selected work',
     tags: ['UX', 'UI', 'Web app', 'Automation'],
-    title: 'A live project dashboard on top of a team’s spreadsheet.',
+    title: 'From a shared spreadsheet to a live dashboard.',
+    statement: ['From a shared spreadsheet', 'to a live dashboard.'],
+    lead: 'A team ran every project from a shared spreadsheet and chat threads. We designed and built the web app that turned it into one live view of what needs attention.',
+    video: { mp4: 'videos/work-dashboard.mp4', webm: 'videos/work-dashboard.webm', poster: 'videos/work-dashboard.jpg' },
     story: [
       {
         label: 'The problem',
@@ -70,7 +73,8 @@ export const site = {
         text: 'One place to see every project. What is late or due rises to the top on its own, so each day starts from what needs attention instead of a search through files.',
       },
     ],
-    note: 'The demo above shows the real interface with sample data.',
+    videoLabel: 'Demo: the project dashboard we designed and built, running on a laptop. A task is ticked off and the open bug count drops.',
+    note: 'The real interface, shown with sample data.',
     siteProof: {
       label: 'Also on show: this website',
       items: ['Designed and built in-house', 'Lighthouse mobile performance 95+', 'Accessibility 100', 'Works without JavaScript'],

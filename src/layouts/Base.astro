@@ -38,9 +38,6 @@ const ogImage = new URL(`${base}og.png`, Astro.site);
         var seen = false;
         try { seen = sessionStorage.getItem('advent-intro') === '1'; } catch (e) {}
         if (!reduced && !seen) d.classList.add('intro-on');
-        var vw = window.innerWidth;
-        var g = Math.min(48, Math.max(16, vw * 0.04));
-        d.style.setProperty('--panel-s', String(Math.min(1, Math.min(1240, vw - 2 * g) / vw)));
       })();
     </script>
   </head>

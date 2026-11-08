@@ -1,0 +1,148 @@
+---
+// Recording stage for the Work-section footage: the full dashboard inside an original
+// space-black laptop. Copied into src/pages temporarily by record.mjs; never shipped.
+import '../styles/tokens.css';
+import '../styles/global.css';
+import Dashboard from '../components/Dashboard.astro';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>Recording stage</title>
+  </head>
+  <body>
+    <div class="scene">
+      <div class="laptop">
+        <div class="lid">
+          <div class="screen"><Dashboard /></div>
+          <div class="notch" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="hinge"></div>
+        <div class="base"><span class="lip"></span></div>
+        <div class="shadow"></div>
+      </div>
+    </div>
+    <script>
+      import { gsap } from 'gsap';
+      // A seamless 8s loop: the pointer ticks off the late task, the bug count drops,
+      // then everything eases back to the first frame.
+      const dash = document.querySelector<HTMLElement>('[data-dashboard]')!;
+      const row = dash.querySelector<HTMLElement>('[data-need-row="0"]')!;
+      const pill = row.querySelector<HTMLElement>('[data-pill]')!;
+      const check = row.querySelector<HTMLElement>('[data-check]')!;
+      const pointer = dash.querySelector<HTMLElement>('#demo-pointer')!;
+      const bugs = dash.querySelector<HTMLElement>('[data-tile="Bugs open"] [data-count]')!;
+      const week = [...dash.querySelectorAll<HTMLElement>('.dash__ev')][1];
+      const at = (el: HTMLElement) => {
+        const d = dash.getBoundingClientRect(), r = el.getBoundingClientRect();
+        return { x: r.left - d.left + r.width / 2, y: r.top - d.top + r.height / 2 };
+      };
+      const start = { x: dash.offsetWidth * 0.82, y: dash.offsetHeight * 0.95 };
+      const c = at(check), w = at(week);
+      const n = { v: 13 };
+      const setDone = (on: boolean) => {
+        row.classList.toggle('is-done', on);
+        pill.textContent = on ? 'Done' : pill.dataset.pillText!;
+      };
+      gsap.set(pointer, { x: start.x, y: start.y, opacity: 0 });
+      const tl = gsap.timeline({ paused: true })
+        .to(pointer, { opacity: 1, duration: 0.3 }, 0.4)
+        .to(pointer, { x: c.x - 4, y: c.y - 2, duration: 1.3, ease: 'power3.inOut' }, 0.4)
+        .to(pointer, { scale: 0.8, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.out' }, 1.75)
+        .call(() => setDone(true), undefined, 1.85)
+        .call(() => setDone(false), undefined, 1.8499)
+        .to(row, { opacity: 0.5, duration: 0.5 }, 1.9)
+        .to(n, { v: 12, duration: 0.6, ease: 'power2.out', onUpdate: () => { bugs.textContent = String(Math.round(n.v)); } }, 1.9)
+        .to(pointer, { x: w.x, y: w.y, duration: 1.4, ease: 'power3.inOut' }, 3.2)
+        .to(week, { backgroundColor: '#2E2E2C', duration: 0.3 }, 4.4)
+        .to(week, { backgroundColor: '#111110', duration: 0.4 }, 5.6)
+        .to(pointer, { x: start.x, y: start.y, opacity: 0, duration: 1.1, ease: 'power2.in' }, 5.8)
+        .to(row, { opacity: 1, duration: 0.6 }, 6.6)
+        .to(n, { v: 13, duration: 0.6, ease: 'power2.inOut', onUpdate: () => { bugs.textContent = String(Math.round(n.v)); } }, 6.6)
+        .call(() => setDone(false), undefined, 6.9)
+        .call(() => setDone(true), undefined, 6.8999)
+        .to({}, { duration: 0.8 }, 7.2);
+      (window as any).__rec = { duration: tl.duration(), seek: (t: number) => tl.seek(t, false) };
+    </script>
+  </body>
+</html>
+
+<style>
+  :global(html), :global(body) { margin: 0; background: #111110; }
+  .scene {
+    width: 1920px;
+    height: 1200px;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(70% 60% at 50% 42%, #232322 0%, #161615 45%, #111110 75%);
+    overflow: hidden;
+  }
+  .laptop { position: relative; display: flex; flex-direction: column; align-items: center; }
+  .lid {
+    position: relative;
+    width: 1552px;
+    height: 1026px;
+    border-radius: 30px 30px 14px 14px;
+    background: #0a0a0a;
+    box-shadow: inset 0 0 0 2px #3a3a3c, inset 0 0 0 5px #1b1b1c, 0 0 0 1px #000;
+  }
+  .screen {
+    position: absolute;
+    left: 20px;
+    top: 24px;
+    width: 1512px;
+    height: 982px;
+    border-radius: 12px 12px 4px 4px;
+    overflow: hidden;
+  }
+  .notch {
+    position: absolute;
+    left: 50%;
+    top: 24px;
+    width: 196px;
+    height: 30px;
+    transform: translateX(-50%);
+    background: #0a0a0a;
+    border-radius: 0 0 12px 12px;
+    display: grid;
+    place-items: center;
+  }
+  .notch span { width: 8px; height: 8px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #3a4a5a, #0d1013 70%); }
+  .hinge {
+    width: 1520px;
+    height: 10px;
+    background: linear-gradient(#050505, #2a2a2c);
+    border-radius: 0 0 4px 4px;
+  }
+  .base {
+    position: relative;
+    width: 1740px;
+    height: 26px;
+    margin-top: -2px;
+    border-radius: 3px 3px 22px 22px / 3px 3px 26px 26px;
+    background: linear-gradient(#4a4a4d 0%, #2c2c2e 35%, #1c1c1e 100%);
+    box-shadow: inset 0 1px 0 #6a6a6d;
+  }
+  .lip {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 280px;
+    height: 9px;
+    transform: translateX(-50%);
+    border-radius: 0 0 10px 10px;
+    background: linear-gradient(#141415, #2a2a2c);
+  }
+  .shadow {
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    bottom: -34px;
+    height: 40px;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(0, 0, 0, 0.75), transparent 70%);
+    filter: blur(6px);
+    z-index: -1;
+  }
+</style>

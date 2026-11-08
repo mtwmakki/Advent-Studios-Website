@@ -1,6 +1,5 @@
 ---
 import Button from './Button.astro';
-import Dashboard from './Dashboard.astro';
 import { site } from '../content/site';
 import { waLink } from '../lib/whatsapp';
 ---
@@ -12,14 +11,14 @@ import { waLink } from '../lib/whatsapp';
       <Button href={waLink()} label={site.hero.cta} variant="signal" size="lg" external />
     </div>
   </div>
-  <div id="hero-panel" class="hero__panel" data-cursor-dark data-cursor-text="Demo">
-    <Dashboard />
-  </div>
 </section>
 
 <style>
   .hero {
-    padding-top: calc(var(--nav-h) + clamp(40px, 7vw, 96px));
+    min-height: 100svh;
+    display: grid;
+    align-content: center;
+    padding-block: calc(var(--nav-h) + 24px) 64px;
     overflow-x: clip;
   }
   .hero__text {
@@ -43,26 +42,4 @@ import { waLink } from '../lib/whatsapp';
   }
   .hero__cta { margin-top: 4px; }
 
-  /* Without JS the panel sits inside the page margins. */
-  .hero__panel {
-    container: hero-panel / inline-size;
-    position: relative;
-    height: clamp(460px, 80vh, 820px);
-    margin: clamp(48px, 7vw, 88px) var(--gutter) 0;
-    border-radius: var(--radius-panel);
-    overflow: hidden;
-    background: var(--obsidian);
-  }
-  /* With JS it spans the viewport and is scaled down to the margins until scrolled. */
-  :global(html.js) .hero__panel {
-    width: 100%;
-    margin-inline: 0;
-    transform-origin: 50% 0;
-    transform: scale(var(--panel-s, 0.86));
-    border-radius: calc(var(--radius-panel) / var(--panel-s, 0.86));
-    will-change: transform;
-  }
-  @media (max-width: 767px) {
-    .hero__panel { height: clamp(420px, 70svh, 560px); }
-  }
 </style>

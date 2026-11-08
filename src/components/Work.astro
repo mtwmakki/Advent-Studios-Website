@@ -1,54 +1,129 @@
 ---
 import { site } from '../content/site';
 const w = site.work;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const url = (p: string) => `${base}${p}`;
 ---
 <section id="work" class="work" aria-labelledby="work-title">
-  <div class="container work__grid">
+  <div class="container work__head">
     <p class="work__label mono-label">{w.label}</p>
-    <div class="work__main">
+    <h2 id="work-title" class="work__statement">
+      <span class="work__line" data-drift="right">{w.statement[0]}</span>{' '}
+      <span class="work__line work__line--2" data-drift="left">{w.statement[1]}</span>
+    </h2>
+  </div>
+
+  <div class="container work__lead">
+    <div class="work__thumb" data-melt-from aria-hidden="true">
+      <img src={url(w.video.poster)} alt="" width="1920" height="1200" loading="lazy" decoding="async" />
+    </div>
+    <div class="work__intro">
       <ul class="work__tags" aria-label="Disciplines">
         {w.tags.map((t) => <li class="mono-label">{t}</li>)}
       </ul>
-      <h2 id="work-title" class="work__title" data-reveal>{w.title}</h2>
-      <div class="work__story">
-        {w.story.map((b, i) => (
-          <div class="work__block" data-rise>
-            <span class="mono-label work__num" aria-hidden="true">0{i + 1}</span>
-            <h3>{b.label}</h3>
-            <p>{b.text}</p>
-          </div>
-        ))}
+      <p class="work__lead-text" data-rise>{w.lead}</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <figure class="work__figure">
+      <div class="work__player" data-melt-to data-cursor-dark data-cursor-text="Live demo">
+        <video
+          class="work__video"
+          data-melt-video
+          muted
+          loop
+          playsinline
+          preload="none"
+          poster={url(w.video.poster)}
+          aria-hidden="true"
+        >
+          <source src={url(w.video.webm)} type="video/webm" />
+          <source src={url(w.video.mp4)} type="video/mp4" />
+        </video>
       </div>
-      <p class="work__note">{w.note}</p>
-      <div class="work__proof" data-site-proof data-rise>
-        <p class="mono-label work__proof-label">{w.siteProof.label}</p>
-        <ul>
-          {w.siteProof.items.map((item) => <li>{item}</li>)}
-        </ul>
-      </div>
+      <figcaption class="work__note"><span class="sr-only">{w.videoLabel} </span>{w.note}</figcaption>
+    </figure>
+  </div>
+
+  <div class="container work__grid">
+    <div class="work__story">
+      {w.story.map((b, i) => (
+        <div class="work__block" data-rise>
+          <span class="mono-label work__num" aria-hidden="true">0{i + 1}</span>
+          <h3>{b.label}</h3>
+          <p>{b.text}</p>
+        </div>
+      ))}
+    </div>
+    <div class="work__proof" data-site-proof data-rise>
+      <p class="mono-label work__proof-label">{w.siteProof.label}</p>
+      <ul>
+        {w.siteProof.items.map((item) => <li>{item}</li>)}
+      </ul>
     </div>
   </div>
 </section>
 
 <style>
-  .work { padding-block: clamp(96px, 12vw, 180px) clamp(48px, 6vw, 96px); }
-  .work__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); gap: 32px; }
-  .work__label { color: var(--graphite); padding-top: 0.6em; }
-  .work__main { display: grid; gap: clamp(24px, 3vw, 40px); }
+  .work {
+    padding-block: clamp(96px, 12vw, 180px) clamp(48px, 6vw, 96px);
+    overflow-x: clip;
+  }
+
+  .work__head { display: grid; gap: 20px; }
+  .work__label { color: var(--graphite); }
+  .work__statement {
+    display: grid;
+    font: 600 clamp(44px, 7.4vw, 124px)/1.02 var(--font-sans);
+    letter-spacing: -0.045em;
+  }
+  .work__line { display: block; white-space: nowrap; will-change: transform; }
+  .work__line--2 { padding-left: clamp(24px, 12vw, 220px); }
+
+  .work__lead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: clamp(24px, 5vw, 80px);
+    align-items: end;
+    margin-top: clamp(40px, 6vw, 88px);
+  }
+  .work__thumb {
+    width: min(100%, 400px);
+    aspect-ratio: 16 / 10;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--obsidian);
+  }
+  .work__thumb img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); }
+  .work__intro { display: grid; gap: 20px; max-width: 52ch; }
   .work__tags { display: flex; flex-wrap: wrap; gap: 8px; }
   .work__tags li { padding: 7px 12px; border: 1px solid var(--mist); border-radius: 999px; color: var(--graphite); }
-  .work__title {
-    max-width: 22ch;
-    font: 600 clamp(32px, 4.2vw, 60px)/1.08 var(--font-sans);
-    letter-spacing: -0.035em;
-    text-wrap: balance;
+  .work__lead-text { font-size: clamp(18px, 1.5vw, 21px); line-height: 1.55; color: var(--graphite); }
+
+  .work__figure { margin: clamp(72px, 10vw, 160px) 0 0; display: grid; gap: 14px; }
+  .work__player {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--radius-panel);
+    overflow: hidden;
+    background: var(--obsidian);
   }
+  .work__video { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .work__note { color: var(--graphite); font-size: 14px; }
+
+  /* With WebGL the canvas draws the footage; the DOM copies stay as layout anchors. */
+  :global(#work.is-gl) .work__thumb img,
+  :global(#work.is-gl) .work__video { opacity: 0; }
+  :global(#work.is-gl) .work__thumb,
+  :global(#work.is-gl) .work__player { background: transparent; }
+
+  .work__grid { display: grid; gap: clamp(24px, 3vw, 40px); margin-top: clamp(48px, 6vw, 88px); }
   .work__story { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
   .work__block { display: grid; align-content: start; gap: 12px; padding-top: 18px; border-top: 1px solid var(--obsidian); }
   .work__num { color: var(--graphite); }
   .work__block h3 { font: 600 20px/1.3 var(--font-sans); letter-spacing: -0.01em; }
   .work__block p { color: var(--graphite); font-size: 16px; line-height: 1.6; }
-  .work__note { color: var(--graphite); font-size: 14px; }
   .work__proof {
     display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px;
     padding: 20px 24px; border-radius: 16px; background: var(--obsidian); color: var(--bone);
@@ -57,10 +132,14 @@ const w = site.work;
   .work__proof ul { display: flex; flex-wrap: wrap; gap: 8px 24px; }
   .work__proof li { font-weight: 500; font-size: 15px; }
   .work__proof li + li::before { content: '·'; margin-right: 24px; color: var(--ash); }
+
   @media (max-width: 900px) {
-    .work__grid { grid-template-columns: 1fr; gap: 16px; }
-    .work__label { padding-top: 0; }
+    .work__lead { grid-template-columns: 1fr; align-items: start; }
+    .work__thumb { width: min(70%, 320px); }
     .work__story { grid-template-columns: 1fr; gap: 20px; }
     .work__proof li + li::before { display: none; }
+  }
+  @media (max-width: 600px) {
+    .work__line { white-space: normal; }
   }
 </style>

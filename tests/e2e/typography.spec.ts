@@ -7,9 +7,9 @@ test('Srotone only for the logo and hero headline; Geist everywhere else', async
   for (const sel of ['h1', '.logo__word']) expect(await family(page.locator(sel).first()), sel).toBe('Srotone');
   for (const sel of [
     '#about h2', '#services h2', '#services h3', '#offer h2', '#faq h2', 'footer h2', '#marquee .marquee__item', '.menu__word',
-    '.hero__sub', '#about .about__body', '.service-card__text', '#site-nav nav a', 'a.btn', '.faq__q button', '.faq__a p', '[data-dashboard]',
+    '.hero__sub', '#about .about__body', '.service-card__text', '#site-nav nav a', 'a.btn', '.faq__q button', '.faq__a p',
   ]) {
     expect(await family(page.locator(sel).first()), sel).toBe('Geist Variable');
   }
-  for (const sel of ['.mono-label', '.dash__tn']) expect(await family(page.locator(sel).first()), sel).toBe('Geist Mono Variable');
+  for (const sel of ['.mono-label']) expect(await family(page.locator(sel).first()), sel).toBe('Geist Mono Variable');
 });

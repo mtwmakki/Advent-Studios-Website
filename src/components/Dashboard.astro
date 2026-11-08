@@ -248,7 +248,7 @@ const maxWeek = Math.max(...weeks.map((w) => w.ship + w.slip));
 
   .dash__more { color: var(--d-mute); font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
   .dash__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-  .dash__load { display: grid; gap: 9px; }
+  .dash__load { display: grid; gap: 16px; }
   .dash__lrow { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 10px; font-size: 12px; }
   .dash__lname { color: var(--d-mute); }
   .dash__stack { display: flex; height: 12px; border-radius: 4px; overflow: hidden; gap: 2px; }
@@ -259,11 +259,11 @@ const maxWeek = Math.max(...weeks.map((w) => w.ship + w.slip));
   .dash__legend { display: flex; gap: 14px; margin-top: 12px; font-size: 11px; color: var(--d-mute); }
   .dash__legend span { display: inline-flex; align-items: center; gap: 6px; }
   .dash__legend i { width: 8px; height: 8px; border-radius: 2px; }
-  .dash__queue { display: grid; gap: 9px; }
+  .dash__queue { display: grid; gap: 16px; }
   .dash__qrow { display: grid; grid-template-columns: 1fr 90px 18px; align-items: center; gap: 10px; font-size: 12px; color: var(--d-mute); }
   .dash__qbar { height: 8px; border-radius: 4px; background: var(--d-bg); overflow: hidden; }
   .dash__qbar i { display: block; height: 100%; background: var(--d-mute); border-radius: 4px; transform-origin: 0 50%; }
-  .dash__cols { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; align-items: end; height: 100px; }
+  .dash__cols { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; align-items: end; height: 150px; }
   .dash__col { display: grid; grid-template-rows: 1fr auto; justify-items: center; gap: 6px; height: 100%; font-size: 10px; color: var(--d-mute); }
   .dash__colbar { align-self: end; display: flex; flex-direction: column; width: 18px; border-radius: 4px; overflow: hidden; gap: 2px; transform-origin: 50% 100%; }
   .dash__colbar .ship { background: var(--signal); }

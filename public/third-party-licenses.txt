@@ -3,6 +3,8 @@ Third-party software and fonts used on this site
 
 GSAP (gsap) — used under the GSAP Standard "No Charge" License: https://gsap.com/standard-license
 
+OGL (ogl) — WebGL library, released into the public domain under The Unlicense: https://github.com/oframe/ogl
+
 ------------------------------------------------
 mouse-follower
 ------------------------------------------------
