@@ -23,8 +23,9 @@ const { variant = 'dark', showWordmark = true, class: className = '' } = Astro.p
   .logo--dark { color: var(--obsidian); }
   .logo--light { color: var(--bone); }
   .logo__mark { width: 34px; height: auto; flex-shrink: 0; }
+  /* The wordmark is always set in Srotone. Owner's rule: never change the logo's font. */
   .logo__word {
-    font: 800 20px/1 var(--font-display);
+    font: 800 20px/1 'Srotone', var(--font-display);
     letter-spacing: -0.04em;
     white-space: nowrap;
   }

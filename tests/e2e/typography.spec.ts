@@ -13,3 +13,23 @@ test('Srotone only for the logo and hero headline; Geist everywhere else', async
   }
   for (const sel of ['.mono-label']) expect(await family(page.locator(sel).first()), sel).toBe('Geist Mono Variable');
 });
+
+// Owner's rule: the Advent Studio logo is always Srotone. Never change it.
+for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['phone', { width: 390, height: 844 }]] as const) {
+  test(`every Advent Studio logo wordmark is Srotone (${name})`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('');
+    const words = page.locator('.logo__word');
+    const count = await words.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i++) {
+      await expect(words.nth(i)).toHaveText('Advent Studio');
+      expect(await family(words.nth(i)), `logo ${i + 1}`).toBe('Srotone');
+    }
+    const loaded = await page.evaluate(async () => {
+      await document.fonts.ready;
+      return document.fonts.check('800 20px Srotone');
+    });
+    expect(loaded, 'Srotone 800 is loaded for the logo').toBe(true);
+  });
+}
