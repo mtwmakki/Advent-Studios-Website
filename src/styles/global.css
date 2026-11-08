@@ -110,3 +110,5 @@ html.js:not(.reduced) :is([data-reveal], [data-fade], [data-rise]):not(.is-revea
 }
 @keyframes reveal-failsafe { to { visibility: visible; } }
 .reveal-line { padding-bottom: 0.08em; margin-bottom: -0.08em; }
+/* Line masks get breathing room so tall glyphs (Srotone's i-dots, accents) are never clipped. */
+.reveal-line-mask { padding-block: 0.18em; margin-block: -0.18em; }

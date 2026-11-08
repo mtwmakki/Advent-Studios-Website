@@ -24,7 +24,8 @@ export function initServiceStack(): void {
       .timeline({
         scrollTrigger: {
           trigger: next,
-          start: 'top bottom',
+          // Only dim once the next card is well on its way up, not when it first peeks in.
+          start: () => `top ${pin() + window.innerHeight * 0.4}px`,
           end: () => `top ${pin()}px`,
           scrub: true,
           invalidateOnRefresh: true,
