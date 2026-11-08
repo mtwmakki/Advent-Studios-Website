@@ -1,0 +1,66 @@
+---
+import { site } from '../content/site';
+const w = site.work;
+---
+<section id="work" class="work" aria-labelledby="work-title">
+  <div class="container work__grid">
+    <p class="work__label mono-label">{w.label}</p>
+    <div class="work__main">
+      <ul class="work__tags" aria-label="Disciplines">
+        {w.tags.map((t) => <li class="mono-label">{t}</li>)}
+      </ul>
+      <h2 id="work-title" class="work__title" data-reveal>{w.title}</h2>
+      <div class="work__story">
+        {w.story.map((b, i) => (
+          <div class="work__block" data-rise>
+            <span class="mono-label work__num" aria-hidden="true">0{i + 1}</span>
+            <h3>{b.label}</h3>
+            <p>{b.text}</p>
+          </div>
+        ))}
+      </div>
+      <p class="work__note">{w.note}</p>
+      <div class="work__proof" data-site-proof data-rise>
+        <p class="mono-label work__proof-label">{w.siteProof.label}</p>
+        <ul>
+          {w.siteProof.items.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .work { padding-block: clamp(96px, 12vw, 180px) clamp(48px, 6vw, 96px); }
+  .work__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); gap: 32px; }
+  .work__label { color: var(--graphite); padding-top: 0.6em; }
+  .work__main { display: grid; gap: clamp(24px, 3vw, 40px); }
+  .work__tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .work__tags li { padding: 7px 12px; border: 1px solid var(--mist); border-radius: 999px; color: var(--graphite); }
+  .work__title {
+    max-width: 22ch;
+    font: 600 clamp(32px, 4.2vw, 60px)/1.08 var(--font-sans);
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .work__story { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+  .work__block { display: grid; align-content: start; gap: 12px; padding-top: 18px; border-top: 1px solid var(--obsidian); }
+  .work__num { color: var(--graphite); }
+  .work__block h3 { font: 600 20px/1.3 var(--font-sans); letter-spacing: -0.01em; }
+  .work__block p { color: var(--graphite); font-size: 16px; line-height: 1.6; }
+  .work__note { color: var(--graphite); font-size: 14px; }
+  .work__proof {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px;
+    padding: 20px 24px; border-radius: 16px; background: var(--obsidian); color: var(--bone);
+  }
+  .work__proof-label { color: var(--ash); }
+  .work__proof ul { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  .work__proof li { font-weight: 500; font-size: 15px; }
+  .work__proof li + li::before { content: '·'; margin-right: 24px; color: var(--ash); }
+  @media (max-width: 900px) {
+    .work__grid { grid-template-columns: 1fr; gap: 16px; }
+    .work__label { padding-top: 0; }
+    .work__story { grid-template-columns: 1fr; gap: 20px; }
+    .work__proof li + li::before { display: none; }
+  }
+</style>

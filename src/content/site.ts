@@ -19,6 +19,7 @@ export const site = {
   whatsappNumber: '',
   email: '[studio email]',
   nav: [
+    { label: 'Work', href: '#work' },
     { label: 'About', href: '#about' },
     { label: 'Services', href: '#services' },
     { label: 'FAQ', href: '#faq' },
@@ -40,6 +41,31 @@ export const site = {
     subline:
       'Custom apps, workflow automation, websites and brand identities for teams that need to move faster.',
     cta: 'Book a call',
+  },
+
+  work: {
+    label: 'Selected work',
+    tags: ['UX', 'UI', 'Web app', 'Automation'],
+    title: 'A live project dashboard on top of a team’s spreadsheet.',
+    story: [
+      {
+        label: 'The problem',
+        text: 'Projects, deadlines and follow-ups lived in a shared spreadsheet and chat threads. Nobody could see what was slipping until it had already slipped.',
+      },
+      {
+        label: 'What we built',
+        text: 'A web app that reads the same spreadsheet and turns it into a dashboard, a project timeline and reminders, designed around how the team already worked.',
+      },
+      {
+        label: 'The outcome',
+        text: 'One place to see every project. What is late or due rises to the top on its own, so each day starts from what needs attention instead of a search through files.',
+      },
+    ],
+    note: 'The demo above shows the real interface with sample data.',
+    siteProof: {
+      label: 'Also on show: this website',
+      items: ['Designed and built in-house', 'Lighthouse mobile performance 95+', 'Accessibility 100', 'Works without JavaScript'],
+    },
   },
 
   about: {
