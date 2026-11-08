@@ -1,0 +1,31 @@
+---
+interface Props {
+  variant?: 'dark' | 'light';
+  showWordmark?: boolean;
+  class?: string;
+}
+const { variant = 'dark', showWordmark = true, class: className = '' } = Astro.props;
+---
+<span class:list={['logo', `logo--${variant}`, className]} role="img" aria-label="Advent Studio">
+  <svg class="logo__mark" viewBox="-4 -4 168 108" aria-hidden="true" focusable="false">
+    <polygon points="0,100 0,58 58,0 160,0 160,100 104,100 104,70 92,70 62,100" fill="currentColor" stroke="currentColor" stroke-width="8" stroke-linejoin="round" />
+  </svg>
+  {showWordmark && <span class="logo__word" aria-hidden="true">Advent Studio</span>}
+</span>
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1;
+  }
+  .logo--dark { color: var(--obsidian); }
+  .logo--light { color: var(--bone); }
+  .logo__mark { width: 34px; height: auto; flex-shrink: 0; }
+  .logo__word {
+    font: 800 20px/1 var(--font-sans);
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+  }
+</style>

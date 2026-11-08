@@ -1,0 +1,45 @@
+---
+import '../styles/tokens.css';
+import '../styles/global.css';
+import srotone400 from '../assets/fonts/srotone-400.woff2?url';
+import srotone800 from '../assets/fonts/srotone-800.woff2?url';
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const canonical = new URL(base, Astro.site);
+const ogImage = new URL(`${base}og.png`, Astro.site);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#F2F1EC" />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <link rel="preload" href={srotone400} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={srotone800} as="font" type="font/woff2" crossorigin />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        d.classList.add('js');
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('reduced');
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

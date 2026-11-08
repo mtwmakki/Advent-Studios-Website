@@ -1,0 +1,37 @@
+/* Advent Studio brand tokens (from the brand guide). */
+@import '@fontsource/funnel-display/400.css';
+@import '@fontsource/funnel-display/500.css';
+@import '@fontsource/funnel-display/700.css';
+@import '@fontsource/funnel-display/800.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+
+@font-face { font-family: 'Srotone'; src: url('../assets/fonts/srotone-300.woff2') format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Srotone'; src: url('../assets/fonts/srotone-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Srotone'; src: url('../assets/fonts/srotone-500.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Srotone'; src: url('../assets/fonts/srotone-700.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Srotone'; src: url('../assets/fonts/srotone-800.woff2') format('woff2'); font-weight: 800; font-style: normal; font-display: swap; }
+
+:root {
+  --obsidian: #111110;
+  --bone: #F2F1EC;
+  --graphite: #5C5C5A;
+  --ash: #9B9A94;
+  --mist: #E4E3DE;
+  --signal: #FF4F1A;
+  --signal-deep: #C2330A;
+  --surface-dark: #1B1B1A;
+  --border-dark: #2E2E2C;
+
+  /* Srotone lacks % & * - @ ^ { } ~ · — → ®; Funnel Display fills those glyphs. */
+  --font-sans: 'Srotone', 'Funnel Display', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --radius-panel: 24px;
+  --radius-card: 32px;
+
+  --gutter: clamp(16px, 4vw, 48px);
+  --maxw: 1240px;
+  --nav-h: 88px;
+}
