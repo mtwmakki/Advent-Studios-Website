@@ -1,0 +1,281 @@
+---
+// Live demo of a project dashboard we built. Layout follows the real product's dashboard;
+// every label, name and number below is invented sample data for a fictional app team.
+const nav = ['Dashboard', 'Features', 'Releases', 'My work', 'Team'];
+const needs = [
+  { t: 'Fix sign-in timeout', code: 'APP-212', sub: 'iOS app', dt: 'Tue', chip: '2 days late', sev: 'bad' },
+  { t: 'Approve onboarding flow', code: 'APP-198', sub: 'Design review', dt: 'Today', chip: 'Due today', sev: 'warn' },
+  { t: 'Write release notes', code: 'REL-2.4', sub: 'Release 2.4', dt: 'Wed', chip: 'Due tomorrow', sev: 'neu' },
+  { t: 'QA payment sheet', code: 'APP-205', sub: 'Android app', dt: 'Thu', chip: 'Due Thu', sev: 'neu' },
+];
+const tiles = [
+  { l: 'Open features', v: 24, tr: '3 fewer than last week', dir: 'down' },
+  { l: 'In review', v: 7, tr: '2 more than last week', dir: 'up' },
+  { l: 'Bugs open', v: 13, tr: '5 fewer than last week', dir: 'down', hot: true },
+  { l: 'Shipped this month', v: 18, tr: '4 more than last week', dir: 'up' },
+];
+const week = [
+  { d: 'Mon', n: 10, today: true, items: [{ t: 'Beta to testers', s: 'iOS app' }] },
+  { d: 'Tue', n: 11, items: [{ t: 'Release 2.4', s: 'Web' }, { t: 'Design review', s: 'Onboarding' }] },
+  { d: 'Wed', n: 12, items: [] },
+  { d: 'Thu', n: 13, items: [{ t: 'App Store submit', s: 'iOS app' }] },
+  { d: 'Fri', n: 14, items: [{ t: 'Retro', s: 'All squads' }] },
+  { d: 'Sat', n: 15, items: [] },
+];
+const load = [
+  { team: 'Web', seg: [6, 3, 1] },
+  { team: 'Mobile', seg: [5, 2, 2] },
+  { team: 'Platform', seg: [4, 3, 0] },
+];
+const queue = [
+  { l: 'Waiting for review', v: 5 },
+  { l: 'Changes requested', v: 3 },
+  { l: 'Ready to merge', v: 4 },
+  { l: 'Blocked by checks', v: 1 },
+];
+const weeks = [
+  { w: 'W40', ship: 3, slip: 1 },
+  { w: 'W41', ship: 4, slip: 0 },
+  { w: 'W42', ship: 2, slip: 2 },
+  { w: 'W43', ship: 5, slip: 1 },
+  { w: 'W44', ship: 4, slip: 1 },
+  { w: 'W45', ship: 6, slip: 0 },
+];
+const maxQueue = Math.max(...queue.map((q) => q.v));
+const maxWeek = Math.max(...weeks.map((w) => w.ship + w.slip));
+---
+<p class="sr-only">Demo: a project dashboard we designed and built, shown with sample data.</p>
+<div class="dash" data-dashboard aria-hidden="true">
+  <div class="dash__side">
+    <div class="dash__brand"><span class="dash__logo"></span>Launchpad</div>
+    <ul class="dash__nav">
+      {nav.map((n, i) => (
+        <li class:list={['dash__navitem', { 'is-active': i === 0 }]}>
+          <span class="dash__navicon"></span>{n}
+        </li>
+      ))}
+    </ul>
+    <div class="dash__me"><span class="dash__avatar">S</span><span>Sam<br /><em>Product lead</em></span></div>
+  </div>
+
+  <div class="dash__main">
+    <div class="dash__top">
+      <div>
+        <div class="dash__greet">Good morning, Sam · Monday 10 November</div>
+        <div class="dash__title">Dashboard</div>
+      </div>
+      <div class="dash__search">Search features, releases…</div>
+    </div>
+
+    <div class="dash__card dash__needs">
+      <div class="dash__ph"><span class="dash__h">Needs you</span><span class="dash__link">See all ›</span></div>
+      <div class="dash__rows">
+        {needs.map((x, i) => (
+          <div class="dash__row" data-need-row={i}>
+            <span class="dash__check" data-check></span>
+            <span class="dash__rt">
+              <b>{x.t}</b>
+              <span><span class="dash__mono">{x.code}</span> · {x.sub}</span>
+            </span>
+            <span class="dash__dt">{x.dt}</span>
+            <span class:list={['dash__pill', `is-${x.sev}`]} data-pill data-pill-text={x.chip}>{x.chip}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="dash__tiles">
+      {tiles.map((x) => (
+        <div class="dash__card dash__tile" data-tile={x.l}>
+          <span class="dash__tl">{x.l}</span>
+          <span class:list={['dash__tn', { 'is-hot': x.hot }]} data-count={x.v}>{x.v}</span>
+          <span class:list={['dash__tt', `is-${x.dir}`]}>{x.dir === 'up' ? '↑' : '↓'} {x.tr}</span>
+        </div>
+      ))}
+    </div>
+
+    <div class="dash__card dash__week">
+      <div class="dash__ph"><span class="dash__h">This week</span><span class="dash__sub">releases, reviews and launches</span></div>
+      <div class="dash__days">
+        {week.map((d) => (
+          <div class:list={['dash__day', { 'is-today': d.today, 'is-off': !d.items.length }]}>
+            <span class="dash__dl">{d.d} <span class="dash__mono">{d.n}</span></span>
+            {d.items.length
+              ? d.items.map((it) => <span class="dash__ev"><b>{it.t}</b><span>{it.s}</span></span>)
+              : <span class="dash__none">Nothing due</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="dash__more">More</div>
+    <div class="dash__grid">
+      <div class="dash__card">
+        <div class="dash__ph"><span class="dash__h">Team load</span><span class="dash__sub">open work by squad</span></div>
+        <div class="dash__load">
+          {load.map((r) => (
+            <div class="dash__lrow">
+              <span class="dash__lname">{r.team}</span>
+              <span class="dash__stack">
+                {r.seg.map((v, j) => v > 0 && <i class={`s${j}`} style={`flex:${v}`} data-bar></i>)}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div class="dash__legend"><span><i class="s0"></i>Building</span><span><i class="s1"></i>Review</span><span><i class="s2"></i>Blocked</span></div>
+      </div>
+      <div class="dash__card">
+        <div class="dash__ph"><span class="dash__h">Review queue</span><span class="dash__sub">where open pull requests are waiting</span></div>
+        <div class="dash__queue">
+          {queue.map((q) => (
+            <div class="dash__qrow">
+              <span>{q.l}</span>
+              <span class="dash__qbar"><i style={`width:${(q.v / maxQueue) * 100}%`} data-bar></i></span>
+              <span class="dash__mono">{q.v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div class="dash__card">
+        <div class="dash__ph"><span class="dash__h">Shipped vs slipped</span><span class="dash__sub">last six weeks</span></div>
+        <div class="dash__cols">
+          {weeks.map((w) => (
+            <div class="dash__col">
+              <span class="dash__colbar" style={`height:${((w.ship + w.slip) / maxWeek) * 100}%`} data-col>
+                {w.slip > 0 && <i class="slip" style={`flex:${w.slip}`}></i>}
+                <i class="ship" style={`flex:${w.ship}`}></i>
+              </span>
+              <span class="dash__mono">{w.w}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <svg id="demo-pointer" class="dash__pointer" viewBox="0 0 24 24" width="26" height="26">
+    <path d="M4 2.5 19.5 12l-6.6 1.5 3.9 7.3-2.9 1.5-3.9-7.3L5 20Z" fill="#F2F1EC" stroke="#111110" stroke-width="1.4" stroke-linejoin="round" />
+  </svg>
+</div>
+
+<style>
+  .dash {
+    --d-bg: var(--obsidian);
+    --d-card: var(--surface-dark);
+    --d-line: var(--border-dark);
+    --d-ink: var(--bone);
+    --d-mute: var(--ash);
+    position: relative;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    width: 100%;
+    height: 100%;
+    background: var(--d-bg);
+    color: var(--d-ink);
+    font: 400 13px/1.4 var(--font-sans);
+    text-align: left;
+    overflow: hidden;
+    user-select: none;
+  }
+  .dash__mono { font-family: var(--font-mono); font-size: 0.92em; }
+  .dash__side {
+    display: flex; flex-direction: column; gap: 22px;
+    padding: 28px 18px;
+    border-right: 1px solid var(--d-line);
+  }
+  .dash__brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
+  .dash__logo { width: 18px; height: 18px; border-radius: 6px; background: var(--d-ink); }
+  .dash__nav { display: grid; gap: 2px; }
+  .dash__navitem { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; color: var(--d-mute); }
+  .dash__navitem.is-active { background: var(--d-card); color: var(--d-ink); box-shadow: inset 0 0 0 1px var(--d-line); }
+  .dash__navicon { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid currentColor; }
+  .dash__me { margin-top: auto; display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .dash__me em { font-style: normal; color: var(--d-mute); }
+  .dash__avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--d-line); font-weight: 700; }
+
+  .dash__main { display: flex; flex-direction: column; gap: 14px; padding: 26px 30px; min-width: 0; }
+  .dash__top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .dash__greet { color: var(--d-mute); font-size: 12px; }
+  .dash__title { font-weight: 800; font-size: 26px; letter-spacing: -0.03em; line-height: 1.1; }
+  .dash__search { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--d-line); color: var(--d-mute); font-size: 12px; min-width: 220px; }
+
+  .dash__card { background: var(--d-card); border: 1px solid var(--d-line); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+  .dash__ph { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .dash__h { font-weight: 700; font-size: 14px; }
+  .dash__sub { color: var(--d-mute); font-size: 11.5px; }
+  .dash__link { margin-left: auto; color: var(--d-mute); font-size: 12px; }
+
+  .dash__rows { display: grid; }
+  .dash__row {
+    display: grid; grid-template-columns: 18px 1fr auto auto; align-items: center; gap: 12px;
+    padding: 8px 0; border-top: 1px solid var(--d-line);
+    transition: opacity 0.4s;
+  }
+  .dash__row:first-child { border-top: 0; }
+  .dash__check { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--d-mute); position: relative; }
+  .dash__row.is-done .dash__check { background: var(--d-ink); border-color: var(--d-ink); }
+  .dash__row.is-done .dash__check::after {
+    content: ''; position: absolute; left: 4.5px; top: 1.5px; width: 4px; height: 8px;
+    border: solid var(--d-bg); border-width: 0 1.8px 1.8px 0; transform: rotate(45deg);
+  }
+  .dash__row.is-done b { text-decoration: line-through; text-decoration-color: var(--d-mute); }
+  .dash__rt { display: grid; min-width: 0; }
+  .dash__rt b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dash__rt > span { color: var(--d-mute); font-size: 11.5px; }
+  .dash__dt { color: var(--d-mute); font-size: 12px; }
+  .dash__pill { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; white-space: nowrap; border: 1px solid var(--d-line); color: var(--d-mute); }
+  .dash__pill.is-bad { background: var(--d-ink); border-color: var(--d-ink); color: var(--d-bg); }
+  .dash__pill.is-warn { color: var(--d-ink); border-color: var(--d-mute); }
+  .dash__row.is-done .dash__pill { background: transparent; border-color: var(--d-line); color: var(--d-mute); }
+
+  .dash__tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .dash__tile { display: grid; gap: 2px; }
+  .dash__tl { color: var(--d-mute); font-size: 12px; }
+  .dash__tn { font: 500 30px/1.15 var(--font-mono); letter-spacing: -0.02em; }
+  .dash__tn.is-hot { color: var(--signal); }
+  .dash__tt { font-size: 11px; color: var(--d-mute); }
+
+  .dash__days { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+  .dash__day { display: grid; align-content: start; gap: 6px; padding: 10px; border-radius: 10px; border: 1px solid var(--d-line); min-height: 92px; }
+  .dash__day.is-today { border-color: var(--d-ink); }
+  .dash__day.is-off { opacity: 0.6; }
+  .dash__dl { font-size: 11px; color: var(--d-mute); }
+  .dash__day.is-today .dash__dl { color: var(--d-ink); }
+  .dash__ev { display: grid; padding: 6px 8px; border-radius: 8px; background: var(--d-bg); font-size: 11px; }
+  .dash__ev b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dash__ev span { color: var(--d-mute); }
+  .dash__none { font-size: 11px; color: var(--d-mute); }
+
+  .dash__more { color: var(--d-mute); font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+  .dash__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .dash__load { display: grid; gap: 9px; }
+  .dash__lrow { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 10px; font-size: 12px; }
+  .dash__lname { color: var(--d-mute); }
+  .dash__stack { display: flex; height: 12px; border-radius: 4px; overflow: hidden; gap: 2px; }
+  .dash__stack i, .dash__legend i { display: block; transform-origin: 0 50%; }
+  .s0 { background: var(--d-ink); }
+  .s1 { background: var(--d-mute); }
+  .s2 { background: #5C5C5A; }
+  .dash__legend { display: flex; gap: 14px; margin-top: 12px; font-size: 11px; color: var(--d-mute); }
+  .dash__legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dash__legend i { width: 8px; height: 8px; border-radius: 2px; }
+  .dash__queue { display: grid; gap: 9px; }
+  .dash__qrow { display: grid; grid-template-columns: 1fr 90px 18px; align-items: center; gap: 10px; font-size: 12px; color: var(--d-mute); }
+  .dash__qbar { height: 8px; border-radius: 4px; background: var(--d-bg); overflow: hidden; }
+  .dash__qbar i { display: block; height: 100%; background: var(--d-mute); border-radius: 4px; transform-origin: 0 50%; }
+  .dash__cols { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; align-items: end; height: 100px; }
+  .dash__col { display: grid; grid-template-rows: 1fr auto; justify-items: center; gap: 6px; height: 100%; font-size: 10px; color: var(--d-mute); }
+  .dash__colbar { align-self: end; display: flex; flex-direction: column; width: 18px; border-radius: 4px; overflow: hidden; gap: 2px; transform-origin: 50% 100%; }
+  .dash__colbar .ship { background: var(--signal); }
+  .dash__colbar .slip { background: #5C5C5A; }
+
+  .dash__pointer { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; transform-origin: 4px 2px; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5)); }
+
+  @container hero-panel (max-width: 900px) {
+    .dash { grid-template-columns: 1fr; }
+    .dash__side, .dash__week, .dash__more, .dash__grid, .dash__search { display: none; }
+    .dash__main { padding: 20px; }
+    .dash__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); order: 2; }
+    .dash__dt { display: none; }
+  }
+</style>

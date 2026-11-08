@@ -66,21 +66,24 @@ ul, ol { padding: 0; list-style: none; }
 
 /* Rolling text: two stacked copies slide up one line on hover/focus of the link or button. */
 [data-roll] {
+  --roll-gap: 0.4em;
   position: relative;
   display: inline-flex;
   flex-direction: column;
-  height: 1.15em;
-  line-height: 1.15;
+  height: 1.25em;
+  line-height: 1.25;
   overflow: hidden;
   vertical-align: top;
 }
 [data-roll] > span {
   display: block;
+  flex-shrink: 0;
   transition: transform 0.55s var(--ease-out);
 }
+[data-roll] > span + span { margin-top: var(--roll-gap); }
 :is(a, button):is(:hover, :focus-visible) [data-roll] > span,
 [data-roll]:is(:hover, :focus-visible) > span {
-  transform: translateY(-100%);
+  transform: translateY(calc(-100% - var(--roll-gap)));
 }
 
 /* Cursor follower (mouse-follower), recoloured to the brand. */
@@ -99,3 +102,11 @@ ul, ol { padding: 0; list-style: none; }
 .mf-cursor.-dark .mf-cursor-text { color: var(--obsidian); }
 
 [hidden] { display: none !important; }
+
+/* Reveals: hidden only when JS runs with motion allowed; a failsafe shows them after 3s regardless. */
+html.js:not(.reduced) :is([data-reveal], [data-fade]):not(.is-revealed) {
+  visibility: hidden;
+  animation: reveal-failsafe 0s linear 3s forwards;
+}
+@keyframes reveal-failsafe { to { visibility: visible; } }
+.reveal-line { padding-bottom: 0.08em; margin-bottom: -0.08em; }

@@ -3,24 +3,15 @@ import Base from '../layouts/Base.astro';
 import Intro from '../components/Intro.astro';
 import Nav from '../components/Nav.astro';
 import Menu from '../components/Menu.astro';
-import Button from '../components/Button.astro';
+import Hero from '../components/Hero.astro';
 import { site } from '../content/site';
-import { waLink } from '../lib/whatsapp';
 ---
 <Base title={site.meta.title} description={site.meta.description}>
   <Intro />
   <Nav />
   <Menu />
   <main id="top">
-    <div class="container" style="padding-top:160px;">
-      {/* Temporary button row (removed in Task 5) */}
-      <div style="display:flex;flex-wrap:wrap;gap:16px;padding:48px 0;">
-        <Button href={waLink()} label="Book a call" variant="signal" size="lg" />
-        <Button href={waLink()} label="Book a call" variant="dark" />
-        <div style="background:#111110;padding:16px;border-radius:16px;"><Button href={waLink()} label="Talk about this" variant="light" /></div>
-        <Button href={waLink()} label="See more" variant="ghost" />
-      </div>
-    </div>
+    <Hero />
     {/* Temporary placeholder sections (replaced in Tasks 6-8) */}
     <section id="about" style="min-height:100vh;"></section>
     <section id="services" style="min-height:100vh;"></section>
