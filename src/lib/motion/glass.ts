@@ -3,10 +3,11 @@ import { hasFinePointer, prefersReducedMotion } from './env';
 import { cursorFollower } from './cursor';
 
 /**
- * Liquid glass over the marquee: when the pointer is over the band, the small glass cursor
- * swells into a round lens that magnifies a live copy of the words, with refraction and a
- * slight colour split at its rim. Leaving the band shrinks it back into the glass cursor.
- * Desktop only; off for touch screens and reduced motion.
+ * Liquid glass over the hero and the marquee: when the pointer is over one of them, the small
+ * glass cursor swells into a round lens that magnifies a live copy of what is underneath, with
+ * refraction and a slight colour split at its rim. Leaving shrinks it back into the glass cursor;
+ * over links and buttons it steps aside so their hover effects show. Desktop only; off for touch
+ * screens and reduced motion.
  */
 
 const SIZE = 220;
@@ -105,11 +106,42 @@ function refractionFilter(): SVGSVGElement {
   return svg;
 }
 
+/** A part of the page the lens works over: a live copy of it is magnified inside the glass. */
+type Zone = {
+  el: HTMLElement;
+  /** Elements drawn over the zone that belong in the copy too (the nav over the hero). */
+  extras?: HTMLElement[];
+  /** Pointer over these: the lens steps aside so the normal cursor and hover effects show. */
+  avoid?: string;
+  /** Keeps a moving part of the copy in step with the page, every frame. */
+  follow?: (copy: HTMLElement) => () => void;
+};
+
+const stripIds = (root: HTMLElement) => {
+  [root, ...root.querySelectorAll<HTMLElement>('[id]')].forEach((n) => n.removeAttribute('id'));
+  root.removeAttribute('aria-label');
+  root.removeAttribute('aria-labelledby');
+};
+
 export function initGlass(): void {
   if (!hasFinePointer() || prefersReducedMotion()) return;
+  if (document.querySelector('[data-glass-lens]')) return;
+  const zones: Zone[] = [];
+  const hero = document.getElementById('hero');
+  const nav = document.getElementById('site-nav');
+  if (hero) zones.push({ el: hero, extras: nav ? [nav] : [], avoid: 'a, button, [role="button"], input, label' });
   const marquee = document.getElementById('marquee');
   const track = marquee?.querySelector<HTMLElement>('[data-marquee-track]');
-  if (!marquee || !track || document.querySelector('[data-glass-lens]')) return;
+  if (marquee && track) {
+    zones.push({
+      el: marquee,
+      follow: (copy) => {
+        const copyTrack = copy.querySelector<HTMLElement>('[data-marquee-track]');
+        return () => { if (copyTrack) copyTrack.style.transform = track.style.transform; };
+      },
+    });
+  }
+  if (!zones.length) return;
 
   document.body.appendChild(refractionFilter());
   const lens = document.createElement('div');
@@ -128,29 +160,45 @@ export function initGlass(): void {
   lens.append(view, rim);
   document.body.appendChild(lens);
 
+  const root = document.documentElement;
   const state = { s: BEAD / SIZE };
   let px = -1e4, py = -1e4; // pointer
   let cx = px, cy = py; // lens centre, trailing the pointer like liquid
-  let open = false;
-  let near = false;
-  let copyTrack: HTMLElement | null = null;
+  let current: Zone | null = null;
+  let follow: (() => void) | null = null;
+  const visible = new Set<HTMLElement>();
 
-  const fill = () => {
-    const copy = marquee.cloneNode(true) as HTMLElement;
-    copy.removeAttribute('id');
-    copy.removeAttribute('aria-label');
-    copy.removeAttribute('aria-labelledby');
-    copy.style.width = `${marquee.offsetWidth}px`;
-    content.replaceChildren(copy);
-    copyTrack = copy.querySelector<HTMLElement>('[data-marquee-track]');
+  const fill = (zone: Zone) => {
+    const r = zone.el.getBoundingClientRect();
+    const copy = zone.el.cloneNode(true) as HTMLElement;
+    stripIds(copy);
+    copy.style.width = `${zone.el.offsetWidth}px`;
+    copy.style.margin = '0';
+    const parts: HTMLElement[] = [copy];
+    for (const extra of zone.extras ?? []) {
+      const xr = extra.getBoundingClientRect();
+      const holder = document.createElement('div');
+      holder.style.cssText = `position:absolute;left:${xr.left - r.left}px;top:${xr.top - r.top}px;width:${xr.width}px;height:${xr.height}px;`;
+      const c = extra.cloneNode(true) as HTMLElement;
+      stripIds(c);
+      holder.appendChild(c);
+      parts.push(holder);
+    }
+    content.replaceChildren(...parts);
+    content.style.width = `${r.width}px`;
+    content.style.height = `${r.height}px`;
+    follow = zone.follow ? zone.follow(copy) : null;
   };
 
-  const show = () => {
-    if (open) return;
-    open = true;
-    fill();
+  const show = (zone: Zone) => {
+    if (current === zone) return;
+    const wasOpen = !!current;
+    current?.el.classList.remove('has-lens');
+    current = zone;
+    fill(zone);
+    zone.el.classList.add('has-lens');
+    if (wasOpen) return; // moving straight from one zone to another: just swap the copy
     cx = px; cy = py;
-    marquee.classList.add('has-lens');
     cursorFollower()?.hide();
     gsap.killTweensOf(state);
     gsap.to(lens, { opacity: 1, duration: 0.15, overwrite: true });
@@ -158,9 +206,9 @@ export function initGlass(): void {
     gsap.to(state, { s: 1, duration: 0.8, ease: 'elastic.out(1, 0.6)' });
   };
   const hide = () => {
-    if (!open) return;
-    open = false;
-    marquee.classList.remove('has-lens');
+    if (!current) return;
+    current.el.classList.remove('has-lens');
+    current = null;
     gsap.killTweensOf(state);
     // The magnified copy fades first, so what shrinks back into the cursor is clear glass.
     gsap.to(view, { opacity: 0, duration: 0.12, overwrite: true });
@@ -172,14 +220,22 @@ export function initGlass(): void {
         gsap.to(lens, { opacity: 0, duration: 0.1, overwrite: true });
         cursorFollower()?.show();
         content.replaceChildren();
-        copyTrack = null;
+        follow = null;
       },
     });
   };
 
-  const inside = () => {
-    const r = marquee.getBoundingClientRect();
-    return px >= r.left && px <= r.right && py >= r.top && py <= r.bottom;
+  // Which zone the pointer is over, if any, and whether the lens should step aside there.
+  const zoneAt = (): Zone | null => {
+    if (root.classList.contains('intro-on') || root.classList.contains('menu-open')) return null;
+    for (const zone of zones) {
+      if (!visible.has(zone.el)) continue;
+      const r = zone.el.getBoundingClientRect();
+      if (px < r.left || px > r.right || py < r.top || py > r.bottom) continue;
+      if (zone.avoid && document.elementFromPoint(px, py)?.closest(zone.avoid)) return null;
+      return zone;
+    }
+    return null;
   };
 
   window.addEventListener('pointermove', (e) => {
@@ -188,19 +244,30 @@ export function initGlass(): void {
   }, { passive: true });
   document.addEventListener('mouseleave', hide);
 
-  new IntersectionObserver(([e]) => { near = e.isIntersecting; if (!near) hide(); }).observe(marquee);
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      const el = e.target as HTMLElement;
+      if (e.isIntersecting) visible.add(el);
+      else { visible.delete(el); if (current?.el === el) hide(); }
+    }
+  });
+  zones.forEach((z) => io.observe(z.el));
 
   gsap.ticker.add(() => {
-    if (!near) return;
-    // The band can scroll in or out from under a still pointer, so check every frame.
-    if (inside()) show();
+    if (!visible.size && !current) return;
+    // Zones can scroll in or out from under a still pointer, so check every frame.
+    const zone = zoneAt();
+    if (zone) show(zone);
     else hide();
-    if (!open && state.s <= BEAD / SIZE + 0.001) return;
+    if (!current && state.s <= BEAD / SIZE + 0.001) return;
     cx += (px - cx) * 0.24;
     cy += (py - cy) * 0.24;
-    const m = marquee.getBoundingClientRect();
     lens.style.transform = `translate3d(${cx - R}px, ${cy - R}px, 0) scale(${state.s})`;
-    content.style.transform = `translate3d(${R + (m.left - cx) * ZOOM}px, ${R + (m.top - cy) * ZOOM}px, 0) scale(${ZOOM})`;
-    if (copyTrack) copyTrack.style.transform = track.style.transform;
+    const el = (current ?? zones.find((z) => z.el.classList.contains('has-lens')))?.el;
+    if (el) {
+      const m = el.getBoundingClientRect();
+      content.style.transform = `translate3d(${R + (m.left - cx) * ZOOM}px, ${R + (m.top - cy) * ZOOM}px, 0) scale(${ZOOM})`;
+    }
+    follow?.();
   });
 }

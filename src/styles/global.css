@@ -161,7 +161,7 @@ html .mf-cursor.-dark.-text:before { background: radial-gradient(90% 90% at 32% 
   position: fixed;
   left: 0;
   top: 0;
-  z-index: 999;
+  z-index: 810; /* above the page and nav, below the menu button and the cursor */
   width: 220px;
   height: 220px;
   border-radius: 50%;
@@ -196,4 +196,4 @@ html .mf-cursor.-dark.-text:before { background: radial-gradient(90% 90% at 32% 
     inset 0 0 0 1.5px rgba(255, 255, 255, 0.55),
     inset 0 0 22px rgba(255, 255, 255, 0.28);
 }
-#marquee.has-lens { cursor: none; }
+.has-lens { cursor: none; }

@@ -49,6 +49,20 @@ test('over the marquee the bead becomes a round lens that magnifies the words', 
   await expect(page.locator('.mf-cursor')).toHaveClass(/-hidden/);
 });
 
+test('over the hero the lens magnifies the headline, and steps aside over the Book a call button', async ({ page }) => {
+  await ready(page);
+  const h1 = (await page.locator('#hero h1').boundingBox())!;
+  await page.mouse.move(h1.x + h1.width * 0.4, h1.y + h1.height * 0.3, { steps: 6 });
+  await expect.poll(() => opacity(page, '[data-glass-lens]'), { timeout: 3000 }).toBeGreaterThan(0.95);
+  await expect(page.locator('[data-glass-lens] h1')).toContainText('studio for apps');
+  await expect(page.locator('.mf-cursor')).toHaveClass(/-hidden/);
+  // Links and buttons get the normal cursor so their hover effects show.
+  const cta = (await page.locator('#hero a.btn').boundingBox())!;
+  await page.mouse.move(cta.x + cta.width / 2, cta.y + cta.height / 2, { steps: 6 });
+  await expect.poll(() => opacity(page, '[data-glass-lens]'), { timeout: 3000 }).toBeLessThan(0.05);
+  await expect(page.locator('.mf-cursor')).not.toHaveClass(/-hidden/);
+});
+
 test('leaving the marquee shrinks the lens back into the glass cursor', async ({ page }) => {
   await ready(page);
   const box = await hoverMarquee(page);

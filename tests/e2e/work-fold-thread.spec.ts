@@ -90,6 +90,22 @@ test('desktop: the foldable opens from closed to flat as you scroll, drawn in 3D
   expect(px[0] + px[1] + px[2]).toBeLessThan(300);
 });
 
+test('the hinge is on the left: the front half opens out to the left like a book cover', async ({ page }) => {
+  await ready(page);
+  await scrollFold(page, 0);
+  await expect(page.locator('#work')).toHaveClass(/\bis-3d\b/, { timeout: 8000 });
+  const x = (part: string) => page.evaluate((part) => (window as any).__fold.screenX(part) as number, part);
+  // Closed: the spine is the left edge, the front half's free edge is on the right.
+  expect(await x('spine')).toBeLessThan(await x('frontEdge'));
+  // Opening and open: the free edge has swung round to the left of the spine.
+  await scrollFold(page, 0.6);
+  await expect.poll(() => angle(page)).toBeGreaterThan(110);
+  expect(await x('frontEdge')).toBeLessThan(await x('spine'));
+  await scrollFold(page, 1);
+  await expect.poll(() => angle(page), { timeout: 4000 }).toBeGreaterThan(178);
+  expect(await x('frontEdge')).toBeLessThan(await x('spine') - 200);
+});
+
 test('the foldable stays pinned while it opens', async ({ page }) => {
   await ready(page);
   await scrollFold(page, 0.2);
