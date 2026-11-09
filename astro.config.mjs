@@ -7,4 +7,6 @@ export default defineConfig({
   trailingSlash: 'ignore',
   output: 'static',
   build: { inlineStylesheets: 'always' },
+  // The 3D foldable (three.js) is one lazy chunk of about 145 KB gzipped, loaded only after the first scroll.
+  vite: { build: { chunkSizeWarningLimit: 650 } },
 });

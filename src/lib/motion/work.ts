@@ -22,14 +22,3 @@ export function initWorkDrift(): void {
     );
   });
 }
-
-/** Without WebGL the DOM player plays the footage itself, only while it is on screen. */
-export function initWorkVideoFallback(): void {
-  const video = document.querySelector<HTMLVideoElement>('#work [data-melt-video]');
-  if (!video || prefersReducedMotion()) return;
-  const io = new IntersectionObserver(([e]) => {
-    if (e.isIntersecting) video.play().catch(() => {});
-    else video.pause();
-  }, { threshold: 0.15 });
-  io.observe(video);
-}

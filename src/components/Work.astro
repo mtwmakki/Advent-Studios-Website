@@ -1,6 +1,7 @@
 ---
 import { site } from '../content/site';
 const w = site.work;
+const f = w.fold;
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const url = (p: string) => `${base}${p}`;
 ---
@@ -14,9 +15,6 @@ const url = (p: string) => `${base}${p}`;
   </div>
 
   <div class="container work__lead">
-    <div class="work__thumb" data-melt-from aria-hidden="true">
-      <img src={url(w.video.poster)} alt="" width="1920" height="1200" loading="lazy" decoding="async" />
-    </div>
     <div class="work__intro">
       <ul class="work__tags" aria-label="Disciplines">
         {w.tags.map((t) => <li class="mono-label">{t}</li>)}
@@ -25,26 +23,22 @@ const url = (p: string) => `${base}${p}`;
     </div>
   </div>
 
-  <div class="container">
-    <figure class="work__figure">
-      <div class="work__player" data-melt-to data-cursor-dark data-cursor-text="Live demo">
-        <video
-          class="work__video"
-          data-melt-video
-          muted
-          loop
-          playsinline
-          preload="none"
-          poster={url(w.video.poster)}
-          aria-hidden="true"
-        >
-          <source src={url(w.video.webm)} type="video/webm" />
-          <source src={url(w.video.mp4)} type="video/mp4" />
-        </video>
+  <figure class="work__fold">
+    <div
+      class="fold"
+      data-fold
+      data-fold-angle="180"
+      data-inner={url(f.inner)}
+      data-inner-poster={url(f.innerPoster)}
+      data-cover={url(f.cover)}
+    >
+      <div class="fold__stage" data-fold-stage>
+        <img class="fold__still fold__still--closed" src={url(f.stillClosed)} alt="" width="767" height="1274" loading="lazy" decoding="async" />
+        <img class="fold__still fold__still--open" data-fold-still src={url(f.stillOpen)} alt="" width="2002" height="1484" loading="lazy" decoding="async" />
       </div>
-      <figcaption class="work__note"><span class="sr-only">{w.videoLabel} </span>{w.note}</figcaption>
-    </figure>
-  </div>
+    </div>
+    <figcaption class="container work__note"><span class="sr-only">{w.videoLabel} </span>{w.note}</figcaption>
+  </figure>
 
   <div class="container work__grid">
     <div class="work__story">
@@ -84,39 +78,28 @@ const url = (p: string) => `${base}${p}`;
   .work__lead {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-    gap: clamp(24px, 5vw, 80px);
-    align-items: end;
     margin-top: clamp(40px, 6vw, 88px);
   }
-  .work__thumb {
-    width: min(100%, 400px);
-    aspect-ratio: 16 / 10;
-    border-radius: 14px;
-    overflow: hidden;
-    background: var(--obsidian);
-  }
-  .work__thumb img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); }
-  .work__intro { display: grid; gap: 20px; max-width: 52ch; }
+  .work__intro { grid-column: 2; display: grid; gap: 20px; max-width: 52ch; }
   .work__tags { display: flex; flex-wrap: wrap; gap: 8px; }
   .work__tags li { padding: 7px 12px; border: 1px solid var(--mist); border-radius: 999px; color: var(--graphite); }
   .work__lead-text { font-size: clamp(18px, 1.5vw, 21px); line-height: 1.55; color: var(--graphite); }
 
-  .work__figure { margin: clamp(72px, 10vw, 160px) 0 0; display: grid; gap: 14px; }
-  .work__player {
-    position: relative;
-    aspect-ratio: 16 / 10;
-    border-radius: var(--radius-panel);
-    overflow: hidden;
-    background: var(--obsidian);
-  }
-  .work__video { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .work__note { color: var(--graphite); font-size: 14px; }
-
-  /* With WebGL the canvas draws the footage; the DOM copies stay as layout anchors. */
-  :global(#work.is-gl) .work__thumb img,
-  :global(#work.is-gl) .work__video { opacity: 0; }
-  :global(#work.is-gl) .work__thumb,
-  :global(#work.is-gl) .work__player { background: transparent; }
+  /* The foldable. Without JavaScript or with reduced motion: a still of the open device.
+     With motion: a tall track whose stage stays pinned while the device opens in 3D. */
+  .work__fold { margin: clamp(48px, 7vw, 120px) 0 0; display: grid; gap: 14px; }
+  .fold { position: relative; }
+  .fold__stage { position: relative; display: grid; place-items: center; }
+  .fold__still { grid-area: 1 / 1; display: block; height: auto; }
+  .fold__still--open { width: min(1080px, 88vw); }
+  .fold__still--closed { display: none; width: auto; height: min(62vh, 560px); }
+  :global(html.js:not(.reduced)) .fold:not(.fold--static) { height: 280vh; }
+  :global(html.js:not(.reduced)) .fold:not(.fold--static) .fold__stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+  :global(html.js:not(.reduced)) .fold:not(.fold--static) .fold__still--open { display: none; }
+  :global(html.js:not(.reduced)) .fold:not(.fold--static) .fold__still--closed { display: block; transition: opacity 0.4s var(--ease-out); }
+  :global(#work.is-3d) .fold__still--closed { opacity: 0; }
+  .fold__stage :global(.fold__canvas) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .work__note { color: var(--graphite); font-size: 14px; text-align: center; }
 
   .work__grid { display: grid; gap: clamp(24px, 3vw, 40px); margin-top: clamp(48px, 6vw, 88px); }
   .work__story { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
@@ -134,8 +117,8 @@ const url = (p: string) => `${base}${p}`;
   .work__proof li + li::before { content: '·'; margin-right: 24px; color: var(--ash); }
 
   @media (max-width: 900px) {
-    .work__lead { grid-template-columns: 1fr; align-items: start; }
-    .work__thumb { width: min(70%, 320px); }
+    .work__lead { grid-template-columns: 1fr; }
+    .work__intro { grid-column: 1; }
     .work__story { grid-template-columns: 1fr; gap: 20px; }
     .work__proof li + li::before { display: none; }
   }

@@ -15,12 +15,12 @@ test.describe('no JavaScript', () => {
     await expect(page.locator('h1')).toBeVisible();
     const h2s = page.locator('h2');
     for (let i = 0; i < (await h2s.count()); i++) await expect(h2s.nth(i)).toBeVisible();
-    await expect(page.locator('#work video')).toBeVisible();
+    await expect(page.locator('#work [data-fold-still]')).toBeVisible();
   });
 });
 
-test('the demo footage is hidden from assistive tech but described', async ({ page }) => {
+test('the foldable demo is decorative for assistive tech but described', async ({ page }) => {
   await page.goto('');
-  await expect(page.locator('#work video')).toHaveAttribute('aria-hidden', 'true');
+  await expect(page.locator('#work [data-fold-still]')).toHaveAttribute('alt', '');
   await expect(page.locator('#work figcaption')).toContainText('Demo: the project dashboard we designed and built');
 });

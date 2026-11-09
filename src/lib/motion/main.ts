@@ -2,11 +2,12 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { initIntro } from './intro';
 import { initSmoothScroll } from './scroll';
 import { initCursor } from './cursor';
+import { initGlass } from './glass';
 import { initMagnetic } from './magnetic';
 import { initRollingText } from './roll';
 import { initNav } from './nav';
 import { initLineReveals } from './reveal';
-import { initWorkDrift, initWorkVideoFallback } from './work';
+import { initWorkDrift } from './work';
 import { initThread } from './thread';
 import { prefersReducedMotion } from './env';
 import { initMarquee } from './marquee';
@@ -14,18 +15,20 @@ import { initServiceStack } from './stack';
 import { initFaq } from './faq';
 import { initCardVideos } from './video';
 
-/** Loads the WebGL melt only once the Work section is close; falls back to the plain video. */
-function initWorkMedia(): void {
-  const work = document.getElementById('work');
-  if (!work || prefersReducedMotion()) return;
+/** Loads the 3D foldable once the Work section is close. Without WebGL it stays a still image. */
+function initWorkFold(): void {
+  const track = document.querySelector<HTMLElement>('#work [data-fold]');
+  if (!track || prefersReducedMotion()) return;
+  const fallBack = () => track.classList.add('fold--static');
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import('./melt')
-      .then(({ initMelt }) => { if (!initMelt()) initWorkVideoFallback(); })
-      .catch(() => initWorkVideoFallback());
-  }, { rootMargin: '600px 0px' });
-  io.observe(work);
+    import('./fold')
+      .then(({ initFold }) => initFold(track))
+      .then((fold) => { if (!fold) fallBack(); })
+      .catch(fallBack);
+  }, { rootMargin: '100% 0px' });
+  io.observe(track);
 }
 
 /** Runs `fn` once the visitor first scrolls or uses the keyboard, or right away if the page opened scrolled down. */
@@ -43,7 +46,7 @@ function onFirstScroll(fn: () => void): void {
 }
 
 const idle = (fn: () => void) =>
-  'requestIdleCallback' in window ? window.requestIdleCallback(fn, { timeout: 600 }) : window.setTimeout(fn, 50);
+  'requestIdleCallback' in window ? window.requestIdleCallback(fn, { timeout: 600 }) : setTimeout(fn, 50);
 
 function boot(): void {
   const intro = initIntro();
@@ -53,7 +56,7 @@ function boot(): void {
   initLineReveals(document, intro);
   initWorkDrift();
   // Below-the-fold and pointer-only setup runs in small idle-time steps so first paint stays fast.
-  const steps = [initCursor, initMagnetic, initMarquee, initServiceStack, initCardVideos, initFaq, () => ScrollTrigger.refresh()];
+  const steps = [initCursor, initMagnetic, initMarquee, initGlass, initServiceStack, initCardVideos, initFaq, () => ScrollTrigger.refresh()];
   const next = () => {
     const step = steps.shift();
     if (!step) return;
@@ -61,10 +64,10 @@ function boot(): void {
     idle(next);
   };
   idle(next);
-  // The Work melt and the thread are far below the first screen: set them up on the first scroll.
+  // The Work foldable and the thread are far below the first screen: set them up on the first scroll.
   onFirstScroll(() => idle(() => {
     initThread();
-    initWorkMedia();
+    initWorkFold();
   }));
   document.fonts?.ready.then(() => ScrollTrigger.refresh());
 }

@@ -67,7 +67,13 @@ export const site = {
     title: 'From a shared spreadsheet to a live dashboard.',
     statement: ['From a shared spreadsheet', 'to a live dashboard.'],
     lead: 'A team ran every project from a shared spreadsheet and chat threads. We designed and built the web app that turned it into one live view of what needs attention.',
-    video: { mp4: 'videos/work-dashboard.mp4', webm: 'videos/work-dashboard.webm', poster: 'videos/work-dashboard.jpg' },
+    fold: {
+      inner: 'fold/fold-inner.mp4',
+      innerPoster: 'fold/fold-inner.jpg',
+      cover: 'fold/fold-cover.webp',
+      stillOpen: 'fold/fold-open.webp',
+      stillClosed: 'fold/fold-closed.webp',
+    },
     story: [
       {
         label: 'The problem',
@@ -82,7 +88,7 @@ export const site = {
         text: 'One place to see every project. What is late or due rises to the top on its own, so each day starts from what needs attention instead of a search through files.',
       },
     ],
-    videoLabel: 'Demo: the project dashboard we designed and built, running on a laptop. A task is ticked off and the open bug count drops.',
+    videoLabel: 'Demo: the project dashboard we designed and built, on a foldable phone. Closed, it shows a release alert on the lock screen; opened, the full dashboard, where a task is ticked off and the open bug count drops.',
     note: 'The real interface, shown with sample data.',
     siteProof: {
       label: 'Also on show: this website',

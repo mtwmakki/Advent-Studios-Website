@@ -67,33 +67,35 @@ function segLength([a, b, c, e]: Seg): number {
 
 function waypoints(top: number, width: number): Pt[] | null {
   const q = (s: string) => document.querySelector(s);
-  const statement = q('#work h2'), thumb = q('#work [data-melt-from]'), player = q('#work [data-melt-to]'), intro = q('#work .work__intro'),
+  const statement = q('#work h2'), intro = q('#work .work__intro'), fold = q('#work [data-fold]'),
     story = q('#work .work__grid'), about = q('#about'), marquee = q('#marquee'), services = q('#services'),
     faq = q('#faq'), footer = q('footer'), cta = q('footer a.btn--xl'), container = q('#work .container');
-  if (!statement || !thumb || !player || !intro || !story || !about || !marquee || !services || !faq || !footer || !cta || !container) return null;
+  if (!statement || !intro || !fold || !story || !about || !marquee || !services || !faq || !footer || !cta || !container) return null;
 
-  const S = docRect(statement), T = docRect(thumb), P = docRect(player), I = docRect(intro), St = docRect(story), A = docRect(about),
+  const S = docRect(statement), I = docRect(intro), Fo = docRect(fold), St = docRect(story), A = docRect(about),
     M = docRect(marquee), Sv = docRect(services), F = docRect(faq), Ft = docRect(footer), C = docRect(cta), K = docRect(container);
+  const vh = window.innerHeight;
   const y = (v: number) => v - top;
   // Desktop: halfway into the page margin. Phone: inside the 16px gutter, clear of the text.
   const edgeL = width < 900 ? Math.max(5, K.l * 0.4) : Math.max(14, K.l * 0.55);
   const edgeR = width - edgeL;
   const narrow = width < 900;
-  const pad = narrow ? 18 : 36;
   // Ends tucked under the top edge of the button, so the line reads as plugging into it.
   const end = { x: C.l + C.w / 2, y: y(C.t + Math.min(26, C.h * 0.18)) };
+  // While the foldable is pinned, the line runs down the margin beside it like a progress rail.
+  const railTop = y(Fo.t + vh * 0.35);
+  const railBottom = y(Fo.b - vh * 0.35);
 
   if (narrow) {
     return [
       { x: -20, y: y(S.t + S.h * 0.3), anchor: true },
       { x: width * 0.55, y: y(S.t + S.h * 0.55) },
       { x: edgeR, y: y(S.b + 10), anchor: true },
-      // A swoop past the thumbnail's free right side, then down the right gutter beside the text.
-      { x: T.r + pad * 1.5, y: y(T.t + T.h * 0.45), anchor: true },
-      { x: edgeR, y: y(I.t + 10), anchor: true },
-      { x: edgeR, y: y(P.t + P.h * 0.2), anchor: true },
-      { x: width * 0.5, y: y(P.t + P.h * 0.6), anchor: true },
-      { x: edgeL, y: y(P.b + 40), anchor: true },
+      { x: edgeR, y: y(I.b), anchor: true },
+      { x: edgeR, y: railTop, anchor: true },
+      { x: edgeR, y: railBottom, anchor: true },
+      { x: width * 0.5, y: y(Fo.b + 20) },
+      { x: edgeL, y: y(St.t + 40), anchor: true },
       { x: edgeL, y: y(St.b), anchor: true },
       { x: edgeL, y: y(A.b), anchor: true },
       { x: width * 0.5, y: y(M.t + M.h * 0.5) },
@@ -109,18 +111,13 @@ function waypoints(top: number, width: number): Pt[] | null {
     { x: -20, y: y(S.t + S.h * 0.32), anchor: true },
     { x: S.l + S.w * 0.55, y: y(S.t + S.h * 0.18) },
     { x: Math.min(edgeR, S.r + 40), y: y(S.t + S.h * 0.5), anchor: true },
-    // Sweep back under the statement and loop once around the thumbnail.
-    { x: T.r + 120, y: y(T.t - 10) },
-    { x: T.r + pad, y: y(T.b - T.h * 0.1) },
-    { x: T.l + T.w * 0.4, y: y(T.b + pad * 1.3) },
-    { x: T.l - pad, y: y(T.t + T.h * 0.4), anchor: true },
-    { x: T.l + T.w * 0.5, y: y(T.t - pad * 1.2) },
-    { x: T.r + pad * 3, y: y(T.b + pad * 2), anchor: true },
-    // Behind the player (the melt surface draws over it).
-    { x: P.l + P.w * 0.7, y: y(P.t + P.h * 0.35), anchor: true },
-    { x: P.l + P.w * 0.25, y: y(P.b - P.h * 0.2), anchor: true },
-    { x: edgeL, y: y(P.b + 80), anchor: true },
-    // Down the left gutter, through About's label column, then across the marquee.
+    // Back under the statement, past the intro, and into the left margin.
+    { x: I.l + I.w * 0.45, y: y(S.b + (I.t - S.b) * 0.55) },
+    { x: I.l - 70, y: y(I.t + I.h * 0.5), anchor: true },
+    { x: K.l + 60, y: y(I.b + 70), anchor: true },
+    { x: edgeL, y: railTop, anchor: true },
+    { x: edgeL, y: railBottom, anchor: true },
+    // Down through the story, About's label column, then across the marquee.
     { x: edgeL, y: y(St.b), anchor: true },
     { x: K.l + 170, y: y(A.t + A.h * 0.45), anchor: true },
     { x: K.l + 220, y: y(A.b - 30), anchor: true },

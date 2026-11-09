@@ -1,6 +1,8 @@
-// Renders the Work-section footage: the full dashboard inside a laptop, frame by frame,
-// then encodes MP4 (H.264) + WebM (VP9) + a poster into public/videos/.
-// The stage page is built statically (no dev server) and served by a tiny local server,
+// Renders the foldable's screen content for the Work section into public/fold/:
+//  - fold-inner.mp4 / .jpg (H.264 plays everywhere and came out smaller than VP9 here): the full dashboard at the open screen's shape, an 8s loop
+//    captured frame by frame;
+//  - fold-cover.webp: the lock screen shown on the cover screen while the device is closed.
+// The stage pages are built statically (no dev server) and served by a tiny local server,
 // so every frame is deterministic.
 // Usage: node tools/record-dashboard/record.mjs   (needs ffmpeg on PATH)
 import { chromium } from 'playwright';
@@ -12,26 +14,28 @@ import { tmpdir } from 'node:os';
 
 const root = process.cwd();
 const BASE = '/Advent-Studios-Website/';
-const page = join(root, 'src/pages/record-stage.astro');
+const stages = {
+  'fold-screen-stage': 'tools/record-dashboard/FoldScreen.astro',
+  'lock-screen-stage': 'tools/record-dashboard/LockScreen.astro',
+};
 const build = join(tmpdir(), 'advent-record-build');
 const frames = join(tmpdir(), 'advent-record-frames');
-const out = join(root, 'public/videos');
+const out = join(root, 'public/fold');
 const FPS = 30;
-const SCALE = 1.25; // 1920x1200 stage -> 2400x1500 frames
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
-// 1. Build the site with the stage page into a scratch folder, then remove the page again.
-copyFileSync(join(root, 'tools/record-dashboard/Record.astro'), page);
+// 1. Build the site with the stage pages into a scratch folder, then remove the pages again.
+for (const [name, file] of Object.entries(stages)) copyFileSync(join(root, file), join(root, `src/pages/${name}.astro`));
 try {
   rmSync(build, { recursive: true, force: true });
   execFileSync('npx', ['astro', 'build', '--outDir', build], { cwd: root, stdio: 'ignore' });
 } finally {
-  if (existsSync(page)) rmSync(page);
+  for (const name of Object.keys(stages)) rmSync(join(root, `src/pages/${name}.astro`), { force: true });
 }
-log('stage built');
+log('stages built');
 
 // 2. Serve the build under the site's base path.
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.mp4': 'video/mp4', '.webm': 'video/webm' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg' };
 const server = createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (!p.startsWith(BASE)) { res.writeHead(404); return res.end(); }
@@ -43,17 +47,30 @@ const server = createServer((req, res) => {
   createReadStream(file).pipe(res);
 });
 await new Promise((r) => server.listen(4340, r));
+const url = (name) => `http://localhost:4340${BASE}${name}/`;
 
 try {
+  mkdirSync(out, { recursive: true });
+  const browser = await chromium.launch();
+
+  // 3. Cover screen: one still image.
+  {
+    const tab = await browser.newPage({ viewport: { width: 414, height: 600 }, deviceScaleFactor: 2.5 });
+    await tab.goto(url('lock-screen-stage'), { waitUntil: 'load' });
+    await tab.evaluate(() => document.fonts.ready);
+    const png = join(tmpdir(), 'advent-fold-cover.png');
+    await tab.screenshot({ path: png });
+    execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', png, '-c:v', 'libwebp', '-quality', '86', join(out, 'fold-cover.webp')]);
+    await tab.close();
+    log('cover done');
+  }
+
+  // 4. Inner screen: every frame of the 8s loop, by seeking the timeline.
   rmSync(frames, { recursive: true, force: true });
   mkdirSync(frames, { recursive: true });
-  mkdirSync(out, { recursive: true });
-
-  // 3. Capture every frame of the 8s loop by seeking the timeline.
-  const browser = await chromium.launch();
-  const tab = await browser.newPage({ viewport: { width: 1920, height: 1200 }, deviceScaleFactor: SCALE });
+  const tab = await browser.newPage({ viewport: { width: 1380, height: 1000 }, deviceScaleFactor: 1.4 });
   tab.on('pageerror', (e) => log('pageerror', e.message));
-  await tab.goto(`http://localhost:4340${BASE}record-stage/`, { waitUntil: 'load', timeout: 60000 });
+  await tab.goto(url('fold-screen-stage'), { waitUntil: 'load', timeout: 60000 });
   await tab.waitForFunction(() => !!(window).__rec, null, { timeout: 60000 });
   await tab.evaluate(() => document.fonts.ready);
   await tab.waitForTimeout(400);
@@ -67,13 +84,11 @@ try {
   }
   await browser.close();
 
-  // 4. Encode.
+  // 5. Encode. Keyframes every second keep seeking and looping smooth as a video texture.
   const input = ['-y', '-v', 'error', '-framerate', String(FPS), '-i', join(frames, 'f_%04d.png')];
   log('encoding mp4');
-  execFileSync('ffmpeg', [...input, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '24', '-preset', 'slow', '-movflags', '+faststart', join(out, 'work-dashboard.mp4')]);
-  log('encoding webm');
-  execFileSync('ffmpeg', [...input, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '38', '-row-mt', '1', '-deadline', 'good', '-cpu-used', '4', join(out, 'work-dashboard.webm')]);
-  execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', join(frames, 'f_0000.png'), '-vf', 'scale=1920:-1', '-q:v', '4', join(out, 'work-dashboard.jpg')]);
+  execFileSync('ffmpeg', [...input, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '23', '-preset', 'slow', '-g', '30', '-movflags', '+faststart', join(out, 'fold-inner.mp4')]);
+  execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', join(frames, 'f_0000.png'), '-q:v', '3', join(out, 'fold-inner.jpg')]);
   log(`done: ${total} frames (${duration.toFixed(2)}s)`);
 } finally {
   server.close();

@@ -31,41 +31,53 @@ test('the two statement lines drift in opposite directions on scroll', async ({ 
   expect(b[1]).toBeLessThan(a[1] - 10);
 });
 
-test('the demo video downloads nothing on page load', async ({ page }) => {
-  const videoRequests: string[] = [];
-  page.on('request', (r) => { if (/\/videos\/work-dashboard\.(mp4|webm)/.test(r.url())) videoRequests.push(r.url()); });
+// Scroll progress through the foldable's pinned track: 0 at its start, 1 at its end.
+async function scrollFold(page: Page, f: number) {
+  const { top, h } = await page.locator('#work [data-fold]').evaluate((el) => ({ top: el.getBoundingClientRect().top + window.scrollY, h: (el as HTMLElement).offsetHeight }));
+  const vh = await page.evaluate(() => window.innerHeight);
+  await scrollTo(page, Math.round(top + (h - vh) * f));
+  await page.waitForTimeout(500);
+}
+const angle = (page: Page) => page.locator('#work [data-fold]').evaluate((el) => Number(el.getAttribute('data-fold-angle')));
+
+test('nothing for the foldable downloads on page load', async ({ page }) => {
+  const heavy: string[] = [];
+  page.on('request', (r) => { if (/fold-inner\.mp4|\/_astro\/fold\.[\w-]+\.js/.test(r.url())) heavy.push(r.url()); });
   await page.goto('', { waitUntil: 'networkidle' });
-  expect(videoRequests).toEqual([]);
+  expect(heavy).toEqual([]);
 });
 
-test('the player shows the whole laptop footage without cropping', async ({ page }) => {
+test('the inner screen shows the whole dashboard without cropping', async ({ page }) => {
   await ready(page);
-  // The page's own video loads nothing until needed, so read the file's size with a test copy.
-  const { vw, vh, pw, ph } = await page.evaluate(async () => {
-    const src = document.querySelector<HTMLSourceElement>('#work [data-melt-video] source[type="video/mp4"]')!.src;
+  const { vw, vh } = await page.evaluate(async () => {
+    const src = document.querySelector<HTMLElement>('#work [data-fold]')!.dataset.inner!;
     const v = document.createElement('video');
     v.muted = true;
     v.preload = 'metadata';
     await new Promise((r) => { v.addEventListener('loadedmetadata', r, { once: true }); v.src = src; });
-    const p = document.querySelector<HTMLElement>('#work [data-melt-to]')!.getBoundingClientRect();
-    return { vw: v.videoWidth, vh: v.videoHeight, pw: p.width, ph: p.height };
+    return { vw: v.videoWidth, vh: v.videoHeight };
   });
-  expect(vw / vh).toBeCloseTo(16 / 10, 2);
-  expect(Math.abs(pw / ph - vw / vh)).toBeLessThan(0.01);
+  await scrollFold(page, 0.1);
+  await expect(page.locator('canvas[data-fold-canvas]')).toHaveCount(1, { timeout: 8000 });
+  const screen = await page.evaluate(() => (window as any).__fold.screenAspect as number);
+  expect(Math.abs(vw / vh - screen)).toBeLessThan(0.01);
 });
 
-test('desktop: the melting video is drawn with WebGL over the player', async ({ page }) => {
+test('desktop: the foldable opens from closed to flat as you scroll, drawn in 3D', async ({ page }) => {
   await ready(page);
-  const playerTop = await docTop(page, '#work [data-melt-to]');
-  const box0 = (await page.locator('#work [data-melt-to]').boundingBox())!;
-  await scrollTo(page, playerTop - (900 - box0.height) / 2);
-  await page.waitForTimeout(900);
-  await expect(page.locator('canvas[data-melt]')).toBeVisible();
-  await expect(page.locator('#work')).toHaveClass(/\bis-gl\b/);
-  const box = (await page.locator('#work [data-melt-to]').boundingBox())!;
-  const shot = await page.screenshot({ clip: { x: box.x + box.width / 2 - 2, y: box.y + box.height / 2 - 2, width: 4, height: 4 } });
-  // The page background is Bone; the footage there is the dark laptop scene.
-  const png = await page.evaluate(async (b64) => {
+  await scrollFold(page, 0);
+  await expect(page.locator('canvas[data-fold-canvas]')).toHaveCount(1, { timeout: 8000 });
+  await expect(page.locator('#work')).toHaveClass(/\bis-3d\b/, { timeout: 8000 });
+  await expect.poll(() => angle(page)).toBeLessThan(5);
+  await scrollFold(page, 0.5);
+  await expect.poll(() => angle(page)).toBeGreaterThan(40);
+  expect(await angle(page)).toBeLessThan(150);
+  await scrollFold(page, 1);
+  await expect.poll(() => angle(page), { timeout: 4000 }).toBeGreaterThan(178);
+  // The device is drawn: the middle of the stage is the dark screen, not the Bone page.
+  const box = (await page.locator('#work [data-fold-stage]').boundingBox())!;
+  const shot = await page.screenshot({ clip: { x: box.x + box.width / 2 - 40, y: box.y + box.height / 2 - 2, width: 4, height: 4 } });
+  const px = await page.evaluate(async (b64) => {
     const img = new Image();
     img.src = 'data:image/png;base64,' + b64;
     await img.decode();
@@ -75,19 +87,41 @@ test('desktop: the melting video is drawn with WebGL over the player', async ({ 
     ctx.drawImage(img, 0, 0);
     return Array.from(ctx.getImageData(1, 1, 1, 1).data);
   }, shot.toString('base64'));
-  expect(png[0] + png[1] + png[2]).toBeLessThan(300);
+  expect(px[0] + px[1] + px[2]).toBeLessThan(300);
+});
+
+test('the foldable stays pinned while it opens', async ({ page }) => {
+  await ready(page);
+  await scrollFold(page, 0.2);
+  const a = (await page.locator('#work [data-fold-stage]').boundingBox())!.y;
+  await scrollFold(page, 0.7);
+  const b = (await page.locator('#work [data-fold-stage]').boundingBox())!.y;
+  expect(Math.abs(a - b)).toBeLessThan(2);
 });
 
 test.describe('reduced motion', () => {
   test.use({ reducedMotion: 'reduce' });
-  test('no WebGL; the plain video is shown in place', async ({ page }) => {
+  test('no 3D and no pinning; a still of the open device is shown', async ({ page }) => {
     await page.goto('');
+    await scrollTo(page, 300);
     await page.waitForTimeout(800);
-    await expect(page.locator('canvas[data-melt]')).toHaveCount(0);
-    const v = page.locator('#work [data-melt-video]');
-    await v.scrollIntoViewIfNeeded();
-    await expect(v).toBeVisible();
-    expect(await v.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+    await expect(page.locator('canvas[data-fold-canvas]')).toHaveCount(0);
+    const still = page.locator('#work [data-fold-still]');
+    await still.scrollIntoViewIfNeeded();
+    await expect(still).toBeVisible();
+    const h = await page.locator('#work [data-fold]').evaluate((el) => (el as HTMLElement).offsetHeight);
+    expect(h).toBeLessThan(900 * 1.4);
+  });
+});
+
+test.describe('no JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+  test('a still of the open device is shown', async ({ page }) => {
+    await page.goto('');
+    const still = page.locator('#work [data-fold-still]');
+    await still.scrollIntoViewIfNeeded();
+    await expect(still).toBeVisible();
+    expect(await still.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
   });
 });
 
@@ -122,7 +156,7 @@ test('the orange thread draws with scroll and ends at the footer WhatsApp button
 
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
-  test('thread and melt never cause sideways scrolling', async ({ page }) => {
+  test('thread and foldable never cause sideways scrolling', async ({ page }) => {
     await page.goto('');
     await page.waitForTimeout(1500);
     const h = await page.evaluate(() => document.documentElement.scrollHeight);
