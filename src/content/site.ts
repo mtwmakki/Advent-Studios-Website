@@ -68,6 +68,7 @@ export const site = {
     statement: ['From a shared spreadsheet', 'to a live dashboard.'],
     lead: 'A team ran every project from a shared spreadsheet and chat threads. We designed and built the web app that turned it into one live view of what needs attention.',
     fold: {
+      model: 'fold/duo.glb',
       inner: 'fold/fold-inner.mp4',
       innerPoster: 'fold/fold-inner.jpg',
       cover: 'fold/fold-cover.webp',

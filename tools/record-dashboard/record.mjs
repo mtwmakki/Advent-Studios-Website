@@ -68,7 +68,7 @@ try {
   // 4. Inner screen: every frame of the 8s loop, by seeking the timeline.
   rmSync(frames, { recursive: true, force: true });
   mkdirSync(frames, { recursive: true });
-  const tab = await browser.newPage({ viewport: { width: 1380, height: 1000 }, deviceScaleFactor: 1.4 });
+  const tab = await browser.newPage({ viewport: { width: 1430, height: 1005 }, deviceScaleFactor: 1.6 });
   tab.on('pageerror', (e) => log('pageerror', e.message));
   await tab.goto(url('fold-screen-stage'), { waitUntil: 'load', timeout: 60000 });
   await tab.waitForFunction(() => !!(window).__rec, null, { timeout: 60000 });

@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
+// The 3D runs on a software renderer in CI, so frames are slow: give the foldable tests room.
+test.describe.configure({ timeout: 90000 });
+
 async function ready(page: Page) {
   await page.goto('');
   await expect(page.locator('#intro')).toBeHidden({ timeout: 2500 });
@@ -68,12 +71,12 @@ test('desktop: the foldable opens from closed to flat as you scroll, drawn in 3D
   await scrollFold(page, 0);
   await expect(page.locator('canvas[data-fold-canvas]')).toHaveCount(1, { timeout: 8000 });
   await expect(page.locator('#work')).toHaveClass(/\bis-3d\b/, { timeout: 8000 });
-  await expect.poll(() => angle(page)).toBeLessThan(5);
-  await scrollFold(page, 0.5);
-  await expect.poll(() => angle(page)).toBeGreaterThan(40);
+  await expect.poll(() => angle(page), { timeout: 20000 }).toBeLessThan(5);
+  await scrollFold(page, 0.62);
+  await expect.poll(() => angle(page), { timeout: 20000 }).toBeGreaterThan(40);
   expect(await angle(page)).toBeLessThan(150);
   await scrollFold(page, 1);
-  await expect.poll(() => angle(page), { timeout: 4000 }).toBeGreaterThan(178);
+  await expect.poll(() => angle(page), { timeout: 20000 }).toBeGreaterThan(178);
   // The device is drawn: the middle of the stage is the dark screen, not the Bone page.
   const box = (await page.locator('#work [data-fold-stage]').boundingBox())!;
   const shot = await page.screenshot({ clip: { x: box.x + box.width / 2 - 40, y: box.y + box.height / 2 - 2, width: 4, height: 4 } });
@@ -90,19 +93,32 @@ test('desktop: the foldable opens from closed to flat as you scroll, drawn in 3D
   expect(px[0] + px[1] + px[2]).toBeLessThan(300);
 });
 
-test('the hinge is on the left: the front half opens out to the left like a book cover', async ({ page }) => {
+test('pinned, it first shows its back, then flips round to the cover screen before opening', async ({ page }) => {
   await ready(page);
   await scrollFold(page, 0);
   await expect(page.locator('#work')).toHaveClass(/\bis-3d\b/, { timeout: 8000 });
+  const facing = () => page.evaluate(() => (window as any).__fold.facing() as string);
+  await expect.poll(facing, { timeout: 20000 }).toBe('back');
+  expect(await angle(page)).toBeLessThan(2);
+  await scrollFold(page, 0.33);
+  await expect.poll(facing, { timeout: 20000 }).toBe('front');
+  expect(await angle(page)).toBeLessThan(2);
+});
+
+test('the hinge is on the left: the front half opens out to the left like a book cover', async ({ page }) => {
+  await ready(page);
+  await scrollFold(page, 0.33);
+  await expect(page.locator('#work')).toHaveClass(/\bis-3d\b/, { timeout: 8000 });
+  await expect.poll(() => page.evaluate(() => (window as any).__fold.facing() as string), { timeout: 20000 }).toBe('front');
   const x = (part: string) => page.evaluate((part) => (window as any).__fold.screenX(part) as number, part);
   // Closed: the spine is the left edge, the front half's free edge is on the right.
   expect(await x('spine')).toBeLessThan(await x('frontEdge'));
   // Opening and open: the free edge has swung round to the left of the spine.
-  await scrollFold(page, 0.6);
-  await expect.poll(() => angle(page)).toBeGreaterThan(110);
+  await scrollFold(page, 0.75);
+  await expect.poll(() => angle(page), { timeout: 20000 }).toBeGreaterThan(110);
   expect(await x('frontEdge')).toBeLessThan(await x('spine'));
   await scrollFold(page, 1);
-  await expect.poll(() => angle(page), { timeout: 4000 }).toBeGreaterThan(178);
+  await expect.poll(() => angle(page), { timeout: 20000 }).toBeGreaterThan(178);
   expect(await x('frontEdge')).toBeLessThan(await x('spine') - 200);
 });
 

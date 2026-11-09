@@ -1,6 +1,8 @@
 Third-party software and fonts used on this site
 ================================================
 
+iPhone Duo 3D model and fold/screen shaders by jadon7 (https://github.com/jadon7/iphone-duo), used with the author's permission. Recoloured white; Apple logo removed.
+
 GSAP (gsap) — used under the GSAP Standard "No Charge" License: https://gsap.com/standard-license
 
 

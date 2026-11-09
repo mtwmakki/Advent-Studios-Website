@@ -4,126 +4,199 @@ import {
   PerspectiveCamera,
   Group,
   Mesh,
-  Shape,
-  ExtrudeGeometry,
-  ShapeGeometry,
-  CylinderGeometry,
   MeshStandardMaterial,
   MeshBasicMaterial,
-  ShaderMaterial,
-  Matrix4,
-  Vector3,
-  type Object3D,
   VideoTexture,
   TextureLoader,
+  BufferAttribute,
+  Vector2,
+  Vector3,
+  Vector4,
   SRGBColorSpace,
+  NoColorSpace,
+  LinearFilter,
+  LinearMipmapLinearFilter,
   PMREMGenerator,
+  PlaneGeometry,
   DirectionalLight,
+  HemisphereLight,
   ACESFilmicToneMapping,
   type BufferGeometry,
   type Texture,
+  type Object3D,
 } from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { cursorFollower } from './cursor';
 import { hingeAngles } from './fold-math';
 
 /**
- * The Work section's foldable: an original space-black book-style foldable drawn with three.js.
- * Closed, its cover screen shows a lock screen with a tracker alert. The hinge is on the left of the
- * cover screen and the front half opens to the left like a book cover. As you scroll through the
- * pinned track it turns once to face you while unfolding to 180°, and the inner screen plays the
- * dashboard loop with a parallax: the picture holds still from the viewer's side while the
- * hardware folds around it. Everything is driven by scroll; nothing loops on its own.
+ * The Work section's foldable: the iPhone Duo model by jadon7 (github.com/jadon7/iphone-duo),
+ * used with the author's permission, in a white finish and without the Apple logo. Its fold and
+ * screen shaders follow the author's viewer: only the cover half turns about the hinge, the inner
+ * screen is a flexible strip that bends round it, and both screens are projected from a fixed eye
+ * in front of the device, so the picture holds still while the hardware folds (the parallax),
+ * with a soft blur and shade on the part still turning.
+ *
+ * As you scroll through the pinned track the closed phone flips from showing its back round to
+ * its cover screen (a lock screen with a tracker alert), then unfolds to 180° while it turns to
+ * face you, and the inner screen plays the dashboard loop. Everything is driven by scroll.
  */
 
-// One half of the device, in scene units (height 1). The open inner screen is 1.38:1, the same
-// shape as the recorded dashboard, so nothing is cropped.
-const W = 0.68;
-const H = 1;
-const T = 0.032;
-const R = 0.085; // outer corner radius
-const RH = 0.012; // hinge-side corner radius
-const BEVEL = 0.009;
-export const SCREEN_ASPECT = 1.38;
-const BEZEL = (SCREEN_ASPECT * H - 2 * W) / (2 * SCREEN_ASPECT - 2); // inner screen border on the three outer sides
-const COVER_H = 0.92;
-const COVER_W = COVER_H * (414 / 600);
-
-// Inner screen: unlit, with the screen parallax. Each fragment samples the picture where the ray
-// from a fixed eye in front of the open device meets the open screen's plane (see fold-math.ts).
-const innerVertex = /* glsl */ `
-  uniform mat4 uToDevice;
-  varying vec3 vDev;
-  void main() {
-    vDev = (uToDevice * vec4(position, 1.0)).xyz;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-const innerFragment = /* glsl */ `
-  uniform sampler2D map;
-  uniform float hasMap;
-  uniform vec3 eye;
-  uniform vec4 rect;
-  uniform float plane;
-  varying vec3 vDev;
-  void main() {
-    vec3 dir = vDev - eye;
-    vec2 q = eye.xy + dir.xy * ((plane - eye.z) / dir.z);
-    vec2 uv = clamp((q - rect.xy) / (rect.zw - rect.xy), 0.0, 1.0);
-    // Screen pixels pass straight through: the textures are left undecoded (sRGB in, sRGB out).
-    vec3 col = hasMap > 0.5 ? texture2D(map, uv).rgb : vec3(0.067, 0.067, 0.063);
-    gl_FragColor = vec4(col, 1.0);
-  }
-`;
+// Model units (after the author's scale and centring). Open, the device spans x -8.3..8.3.
+const HALF_W = 8.3;
+const HEIGHT = 11.84;
+const HINGE_Z = 0.275454;
+const INNER_FRAME = new Vector4(-7.89935, 0.34562 - 5.8974, 15.7987, 11.1035);
+export const SCREEN_ASPECT = INNER_FRAME.z / INNER_FRAME.w; // 1.4228: the recording matches it
+const EYE = new Vector3(0, 0, 40);
+const OUTER_FRAME = new Vector4(0.23396, 0.27173 - 5.8974, 7.73936, 11.2513).multiplyScalar((EYE.z - 0.24948) / (EYE.z - 0.825538));
+const INNER = 'UXtsBZYlaUvHoEh';
+const OUTER = 'hhgAIoCGsHXeDPY';
+const HIDDEN = ['lJPfQMFXvvcmdtA'];
+// The dark layer behind the back glass shows through where the Apple logo was: make it white too.
+const BACK_LAYERS = ['UPeNpLgJbcWzHun'];
+// The black surrounds behind the inner screen. The screen mesh has hairline cracks near the hinge,
+// and lit, these surrounds showed through them as two grey lines down the open screen; drawn in
+// flat black they disappear (they are a black bezel either way).
+const UNDER_SCREEN = ['RwQzmCvUWHGlFfV', 'PXwNjghIIgDPXsa'];
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const smooth = (a: number, b: number, v: number) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
-const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-/** A rectangle with its own radius at each corner (top-left, top-right, bottom-right, bottom-left). */
-function roundedRect(x0: number, y0: number, x1: number, y1: number, tl: number, tr: number, br: number, bl: number): Shape {
-  const s = new Shape();
-  s.moveTo(x0 + bl, y0);
-  s.lineTo(x1 - br, y0);
-  if (br) s.quadraticCurveTo(x1, y0, x1, y0 + br);
-  s.lineTo(x1, y1 - tr);
-  if (tr) s.quadraticCurveTo(x1, y1, x1 - tr, y1);
-  s.lineTo(x0 + tl, y1);
-  if (tl) s.quadraticCurveTo(x0, y1, x0, y1 - tl);
-  s.lineTo(x0, y0 + bl);
-  if (bl) s.quadraticCurveTo(x0, y0, x0 + bl, y0);
-  return s;
-}
-
-/** Flat shape with UVs spread over [u0, u1] x [0, 1] across its bounding box. */
-function screenGeometry(shape: Shape, u0 = 0, u1 = 1): BufferGeometry {
-  const g = new ShapeGeometry(shape, 12);
-  g.computeBoundingBox();
-  const b = g.boundingBox!;
-  const pos = g.attributes.position;
-  const uv = g.attributes.uv;
-  for (let i = 0; i < pos.count; i++) {
-    uv.setXY(i, lerp(u0, u1, (pos.getX(i) - b.min.x) / (b.max.x - b.min.x)), (pos.getY(i) - b.min.y) / (b.max.y - b.min.y));
+// After jadon7's viewer: screen projection with the soft blur and shade on the turning part.
+const screenShader = /* glsl */ `
+uniform float foldAngle;
+uniform vec2 uiPixel;
+uniform vec4 uiFrame;
+uniform vec2 uiGradient;
+uniform vec3 uiReferenceEye;
+varying vec3 vUIPosition;
+vec3 toLinear(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c)); }
+vec3 sampleUI(vec2 uv, float lod) { return toLinear(textureLod(map, clamp(uv, vec2(0.0), vec2(1.0)), lod).rgb); }
+vec3 screenColor() {
+  float depth = (0.24948 - uiReferenceEye.z) / (vUIPosition.z - uiReferenceEye.z);
+  vec2 projected = uiReferenceEye.xy + (vUIPosition.xy - uiReferenceEye.xy) * depth;
+  vec2 sourceUV = (projected - uiFrame.xy) / uiFrame.zw;
+  #ifdef INNER_UI
+    float progress = clamp(foldAngle / 1.570796327, 0.0, 1.0);
+  #else
+    float c = cos(foldAngle), s = sin(foldAngle);
+    vec2 hingeEdge = vec2(-0.23396, -0.27463 - 0.275454);
+    vec2 foldedEdge = vec2(c * hingeEdge.x + s * hingeEdge.y, -s * hingeEdge.x + c * hingeEdge.y + 0.275454);
+    float edgeDepth = (0.24948 - uiReferenceEye.z) / (foldedEdge.y - uiReferenceEye.z);
+    float anchorX = uiReferenceEye.x + (foldedEdge.x - uiReferenceEye.x) * edgeDepth;
+    sourceUV.x = uiGradient.x + (projected.x - anchorX) / uiFrame.z;
+    float progress = clamp((3.141592654 - foldAngle) / 1.570796327, 0.0, 1.0);
+  #endif
+  float edge = (sourceUV.x - uiGradient.x) / (uiGradient.y - uiGradient.x);
+  float motion = smoothstep(0.0, 1.0, progress);
+  float blurGradient = clamp(edge, 0.0, 1.0);
+  float darkenGradient = clamp((edge - 0.2) / 0.8, 0.0, 1.0);
+  float effect = motion * pow(darkenGradient, 1.35);
+  float radius = 72.0 * motion * pow(blurGradient, 1.35);
+  // Sharpness from the screen's own smooth UVs: the bent coordinates jump at the joins of the
+  // bending strip, which picked a blurry mip there and drew hairlines down the open screen.
+  vec2 aa = max(fwidth(vMapUv), uiPixel * 0.5);
+  vec2 dx = dFdx(vMapUv) / uiPixel;
+  vec2 dy = dFdy(vMapUv) / uiPixel;
+  float baseLod = log2(max(1.0, max(length(dx), length(dy))));
+  vec2 coverage = smoothstep(-aa, aa, sourceUV) * (1.0 - smoothstep(vec2(1.0) - aa, vec2(1.0) + aa, sourceUV));
+  vec3 color = sampleUI(sourceUV, baseLod) * coverage.x * coverage.y;
+  if (radius > 0.0) {
+    float lod = max(baseLod, log2(max(1.0, radius)));
+    vec2 footprint = max(aa, uiPixel * radius * 0.75);
+    color = vec3(0.0);
+    for (int y = -2; y <= 2; y++) {
+      for (int x = -2; x <= 2; x++) {
+        float wx = x == 0 ? 6.0 : (abs(x) == 1 ? 4.0 : 1.0);
+        float wy = y == 0 ? 6.0 : (abs(y) == 1 ? 4.0 : 1.0);
+        vec2 sampleUV = sourceUV + vec2(float(x), float(y)) * uiPixel * radius;
+        vec2 cov = smoothstep(-footprint, footprint, sampleUV) * (1.0 - smoothstep(vec2(1.0) - footprint, vec2(1.0) + footprint, sampleUV));
+        color += sampleUI(sampleUV, lod) * cov.x * cov.y * wx * wy / 256.0;
+      }
+    }
   }
-  uv.needsUpdate = true;
+  return color * (1.0 - min(1.0, effect * 2.0));
+}
+`;
+
+// After jadon7's viewer: the cover half turns about the hinge; the flexible screen bends round it.
+const foldShader = /* glsl */ `
+uniform float foldAngle;
+vec2 rotateHinge(vec2 p) {
+  float c = cos(foldAngle), s = sin(foldAngle);
+  p.y -= 0.275454;
+  return vec2(c * p.x + s * p.y, -s * p.x + c * p.y + 0.275454);
+}
+#ifdef FLEXIBLE_SCREEN
+vec4 bendStrip(vec3 p) {
+  float halfWidth = 0.35;
+  if (p.x >= halfWidth) return vec4(p.x, p.z, 1.0, 0.0);
+  if (p.x <= -halfWidth) return vec4(rotateHinge(p.xz), cos(foldAngle), -sin(foldAngle));
+  float t = (p.x + halfWidth) / (2.0 * halfWidth);
+  float t2 = t*t, t3 = t2*t;
+  vec2 a = rotateHinge(vec2(-halfWidth, p.z));
+  vec2 b = vec2(halfWidth, p.z);
+  vec2 ta = 2.0 * halfWidth * vec2(cos(foldAngle), -sin(foldAngle));
+  vec2 tb = vec2(2.0 * halfWidth, 0.0);
+  vec2 point = (2.0*t3-3.0*t2+1.0)*a + (t3-2.0*t2+t)*ta + (-2.0*t3+3.0*t2)*b + (t3-t2)*tb;
+  vec2 tangent = normalize((6.0*t2-6.0*t)*a + (3.0*t2-4.0*t+1.0)*ta + (-6.0*t2+6.0*t)*b + (3.0*t2-2.0*t)*tb);
+  return vec4(point, tangent);
+}
+#endif
+`;
+
+/** The white finish: every part gets its material from what it is in the original model. */
+function finish(src: MeshStandardMaterial): MeshStandardMaterial {
+  const c = src.color;
+  const lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const metal = src.metalness ?? 0;
+  const rough = src.roughness ?? 1;
+  if (lum > 0.35 && metal > 0.7) {
+    // Frame, buttons and camera rings: white aluminium, polished where the original was.
+    return new MeshStandardMaterial({ color: rough < 0.3 ? 0xeeede9 : 0xd9d7d2, metalness: 0.8, roughness: rough < 0.3 ? 0.2 : 0.42 });
+  }
+  if (lum > 0.6 && metal < 0.3 && rough > 0.9) {
+    // Back glass: frosted white.
+    return new MeshStandardMaterial({ color: 0xf4f3ef, metalness: 0, roughness: 0.5 });
+  }
+  if (lum > 0.25) return new MeshStandardMaterial({ color: c.clone().lerp(c.clone().setHex(0xf2f1ec), 0.6), metalness: Math.min(metal, 0.4), roughness: Math.max(rough, 0.3) });
+  // Glass, lenses, bezels and the screen surrounds stay black.
+  return new MeshStandardMaterial({ color: c.clone(), metalness: metal, roughness: rough < 0.9 ? rough : 0.35 });
+}
+
+/** Undo the file's compression: plain float positions and normals, baked into model units. */
+function bake(mesh: Mesh): BufferGeometry {
+  mesh.updateWorldMatrix(true, false);
+  const g = mesh.geometry.clone();
+  for (const name of ['position', 'normal']) {
+    const a = g.getAttribute(name);
+    if (!a) continue;
+    const out = new Float32Array(a.count * 3);
+    for (let i = 0; i < a.count; i++) { out[i * 3] = a.getX(i); out[i * 3 + 1] = a.getY(i); out[i * 3 + 2] = a.getZ(i); }
+    g.setAttribute(name, new BufferAttribute(out, 3));
+  }
+  g.applyMatrix4(mesh.matrixWorld);
   return g;
 }
 
-/** A slab whose top face sits at z = 0 and whose back is at z = -T. */
-function slab(shape: Shape): BufferGeometry {
-  const g = new ExtrudeGeometry(shape, {
-    depth: T - 2 * BEVEL,
-    bevelEnabled: true,
-    bevelThickness: BEVEL,
-    bevelSize: BEVEL,
-    bevelOffset: -BEVEL,
-    bevelSegments: 4,
-    curveSegments: 16,
-  });
-  g.translate(0, 0, -(T - BEVEL));
-  return g;
+/** Screen UVs, as in the author's viewer, so the shader can sample our pictures. */
+function screenUVs(g: BufferGeometry, kind: 'inner' | 'outer') {
+  const p = g.getAttribute('position');
+  const uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i++) {
+    uv[i * 2] = kind === 'inner' ? (p.getX(i) + 7.89935) / 15.7987 : (-0.23396 - p.getX(i)) / 7.73936;
+    uv[i * 2 + 1] = kind === 'inner' ? (p.getY(i) + 5.8974 - 0.34562) / 11.1035 : (p.getY(i) + 5.8974 - 0.27173) / 11.2513;
+  }
+  g.setAttribute('uv', new BufferAttribute(uv, 2));
 }
+
+/** Waits for an idle moment so the setup never blocks scrolling in one long task. */
+const idle = () => new Promise<void>((r) => ('requestIdleCallback' in window ? window.requestIdleCallback(() => r(), { timeout: 400 }) : setTimeout(r, 30)));
 
 export type FoldHandle = {
   destroy: () => void;
@@ -132,15 +205,15 @@ export type FoldHandle = {
   screenX: (part: 'spine' | 'frontEdge') => number;
   /** For tests: whether the canvas is currently the fixed layer (stage pinned). */
   isCanvasFixed: () => boolean;
+  /** For tests: which side of the device faces the viewer. */
+  facing: () => 'front' | 'back';
 };
-
-/** Waits for an idle moment so the setup never blocks scrolling in one long task. */
-const idle = () => new Promise<void>((r) => ('requestIdleCallback' in window ? window.requestIdleCallback(() => r(), { timeout: 400 }) : setTimeout(r, 30)));
 
 export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
   const stage = track.querySelector<HTMLElement>('[data-fold-stage]');
   const work = document.getElementById('work');
-  if (!stage || !work) return null;
+  const { model: modelUrl, cover: coverUrl, inner: innerUrl, innerPoster } = track.dataset;
+  if (!stage || !work || !modelUrl) return null;
 
   let renderer: WebGLRenderer;
   try {
@@ -153,7 +226,8 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2));
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1;
+  renderer.toneMappingExposure = 1.1;
+
   // Render state: draw only when something changed.
   let p = 0;
   let dirty = true;
@@ -166,132 +240,163 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
   let overDevice = false;
   let labelled = false;
 
+  // Load the model first; nothing is added to the page until it has arrived.
+  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+  let gltf;
+  try {
+    gltf = await loader.loadAsync(modelUrl);
+  } catch {
+    renderer.dispose();
+    return null;
+  }
+  await idle();
+
   const canvas = renderer.domElement;
   canvas.setAttribute('data-fold-canvas', '');
   canvas.setAttribute('aria-hidden', 'true');
   canvas.className = 'fold__canvas';
   stage.appendChild(canvas);
 
-  await idle();
   const scene = new Scene();
-  const key = new DirectionalLight(0xffffff, 1.4);
-  key.position.set(2.5, 3, 4);
+  scene.add(new HemisphereLight(0xffffff, 0xb5baa8, 1.6));
+  const key = new DirectionalLight(0xfffcf5, 2.4);
+  key.position.set(-15, 25, 30);
   scene.add(key);
+  const rim = new DirectionalLight(0xe8edf5, 1.8);
+  rim.position.set(15, 5, -15);
+  scene.add(rim);
+  const camera = new PerspectiveCamera(30, 1, 0.5, 400);
 
-  const camera = new PerspectiveCamera(26, 1, 0.1, 50);
-
-  // Materials: space-black anodised frame, black glass faces, unlit screens.
-  const metal = new MeshStandardMaterial({ color: 0x1d1d1f, metalness: 0.9, roughness: 0.36 });
-  const glass = new MeshStandardMaterial({ color: 0x050506, metalness: 0.2, roughness: 0.08 });
-  const loader = new TextureLoader();
-  const asTexture = (t: Texture) => { t.colorSpace = SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t; };
-  // One material per inner half: each carries its own transform into device space.
-  const SCREEN_Z = 0.0012;
-  const innerScreen = () => new ShaderMaterial({
-    vertexShader: innerVertex,
-    fragmentShader: innerFragment,
-    uniforms: {
-      map: { value: null },
-      hasMap: { value: 0 },
-      uToDevice: { value: new Matrix4() },
-      eye: { value: new Vector3(0, 0, 2.4) },
-      rect: { value: [-W + BEZEL, -H / 2 + BEZEL, W - BEZEL, H / 2 - BEZEL] },
-      plane: { value: SCREEN_Z },
-    },
-  });
-  const innerFront = innerScreen();
-  const innerBack = innerScreen();
-  const setInner = (t: Texture) => {
-    for (const m of [innerFront, innerBack]) { m.uniforms.map.value = t; m.uniforms.hasMap.value = 1; }
+  // Screens: unlit, with the author's projection. Textures stay undecoded and are decoded in the shader.
+  const bend = { value: Math.PI };
+  const anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const screens = {
+    inner: { material: new MeshBasicMaterial({ color: 0x000000, toneMapped: false }), frame: { value: INNER_FRAME.clone() }, gradient: { value: new Vector2(0.5, 0) }, pixel: { value: new Vector2(1 / 2288, 1 / 1608) } },
+    outer: { material: new MeshBasicMaterial({ color: 0x000000, toneMapped: false }), frame: { value: OUTER_FRAME.clone() }, gradient: { value: new Vector2(0, 1) }, pixel: { value: new Vector2(1 / 1035, 1 / 1500) } },
+  };
+  const setScreen = (kind: 'inner' | 'outer', t: Texture, w: number, h: number) => {
+    t.colorSpace = NoColorSpace;
+    t.generateMipmaps = true;
+    t.minFilter = LinearMipmapLinearFilter;
+    t.magFilter = LinearFilter;
+    t.anisotropy = anisotropy;
+    const s = screens[kind];
+    if (s.material.map !== t) s.material.map?.dispose();
+    s.material.map = t;
+    s.material.color.set(0xffffff);
+    s.material.needsUpdate = true;
+    s.pixel.value.set(1 / w, 1 / h);
     dirty = true;
   };
-  const coverMat = new MeshBasicMaterial({ color: 0x111110, toneMapped: false });
 
+  const phone = new Group();
+  const materials: (MeshStandardMaterial | MeshBasicMaterial)[] = [];
   const geos: BufferGeometry[] = [];
-  const mesh = (g: BufferGeometry, m: MeshStandardMaterial | MeshBasicMaterial | ShaderMaterial) => { geos.push(g); return new Mesh(g, m); };
+  gltf.scene.updateMatrixWorld(true);
+  gltf.scene.traverse((o: Object3D) => {
+    const src = o as Mesh;
+    if (!src.isMesh || HIDDEN.includes(src.name)) return;
+    const data = (src.userData ?? {}) as { half?: string; flexible?: boolean };
+    const moving = data.half === 'moving';
+    const flexible = !!data.flexible;
+    const kind = src.name === INNER ? 'inner' : src.name === OUTER ? 'outer' : null;
+    const geometry = bake(src);
+    if (kind) screenUVs(geometry, kind);
+    const material = kind
+      ? screens[kind].material
+      : BACK_LAYERS.includes(src.name)
+        ? new MeshStandardMaterial({ color: 0xf4f3ef, metalness: 0, roughness: 0.5 })
+        : UNDER_SCREEN.includes(src.name)
+          ? new MeshBasicMaterial({ color: 0x050505 })
+          : finish(src.material as MeshStandardMaterial);
+    if (moving || flexible) {
+      material.onBeforeCompile = (shader) => {
+        shader.uniforms.foldAngle = bend;
+        if (kind) {
+          const s = screens[kind];
+          shader.uniforms.uiFrame = s.frame;
+          shader.uniforms.uiGradient = s.gradient;
+          shader.uniforms.uiReferenceEye = { value: EYE };
+          shader.uniforms.uiPixel = s.pixel;
+          shader.fragmentShader = shader.fragmentShader
+            .replace('#include <map_pars_fragment>', `#include <map_pars_fragment>\n${kind === 'inner' ? '#define INNER_UI' : ''}\n${screenShader}`)
+            .replace('#include <map_fragment>', 'diffuseColor.rgb *= screenColor();');
+          shader.vertexShader = `varying vec3 vUIPosition;\n${shader.vertexShader}`.replace('#include <project_vertex>', 'vUIPosition = transformed;\n#include <project_vertex>');
+        }
+        shader.vertexShader = `${flexible ? '#define FLEXIBLE_SCREEN\n' : ''}${foldShader}\n${shader.vertexShader}`
+          .replace('#include <begin_vertex>', flexible
+            ? 'vec4 folded = bendStrip(position);\nvec3 transformed = vec3(folded.x, position.y, folded.y);'
+            : 'vec2 folded = rotateHinge(position.xz);\nvec3 transformed = vec3(folded.x, position.y, folded.y);')
+          .replace('#include <beginnormal_vertex>', `vec3 objectNormal = vec3(normal);
+            ${flexible ? 'vec4 strip = bendStrip(position); float a = atan(-strip.w, strip.z);' : 'float a = foldAngle;'}
+            objectNormal.x = cos(a) * normal.x + sin(a) * normal.z;
+            objectNormal.z = -sin(a) * normal.x + cos(a) * normal.z;`);
+      };
+      material.customProgramCacheKey = () => `fold-${flexible ? 'flexible' : 'cover'}-${kind || 'body'}`;
+    }
+    if (!kind) materials.push(material);
+    geos.push(geometry);
+    const mesh = new Mesh(geometry, material);
+    mesh.name = src.name;
+    mesh.frustumCulled = false;
+    phone.add(mesh);
+  });
 
-  // Back half (fixed, right of the hinge at x = 0) and front half (turns about the hinge; it lies
-  // over the back half when closed and opens out to the left).
-  const device = new Group();
-  const toDevice = (screen: Mesh, mat: ShaderMaterial) => {
-    const inv = new Matrix4();
-    screen.onBeforeRender = () => {
-      inv.copy(device.matrixWorld).invert();
-      mat.uniforms.uToDevice.value.multiplyMatrices(inv, screen.matrixWorld);
-    };
+  // A black backing under each half of the inner screen. The screen's bending strip meets the flat
+  // screen with hairline gaps that let the page show through as faint lines on high-density screens.
+  const backing = (moving: boolean) => {
+    const g = new PlaneGeometry(7.95, 11.2);
+    g.translate(moving ? -7.95 / 2 : 7.95 / 2, 0.34562 + 11.1035 / 2 - 5.8974, 0.2);
+    const m = new MeshBasicMaterial({ color: 0x000000 });
+    if (moving) {
+      m.onBeforeCompile = (shader) => {
+        shader.uniforms.foldAngle = bend;
+        shader.vertexShader = `${foldShader}\n${shader.vertexShader}`.replace('#include <begin_vertex>', 'vec2 folded = rotateHinge(position.xz);\nvec3 transformed = vec3(folded.x, position.y, folded.y);');
+      };
+      m.customProgramCacheKey = () => 'fold-backing';
+    }
+    materials.push(m);
+    geos.push(g);
+    const mesh = new Mesh(g, m);
+    mesh.frustumCulled = false;
+    return mesh;
   };
-  const a = new Group();
-  a.add(mesh(slab(roundedRect(0, -H / 2, W, H / 2, RH, R, R, RH)), metal));
-  const faceA = mesh(new ShapeGeometry(roundedRect(0.0015, -H / 2 + 0.003, W - 0.003, H / 2 - 0.003, RH, R - 0.003, R - 0.003, RH), 12), glass);
-  faceA.position.z = 0.0006;
-  a.add(faceA);
-  const screenA = mesh(new ShapeGeometry(roundedRect(0, -H / 2 + BEZEL, W - BEZEL, H / 2 - BEZEL, 0, R - BEZEL, R - BEZEL, 0), 12), innerBack) as Mesh;
-  screenA.position.z = SCREEN_Z;
-  toDevice(screenA, innerBack);
-  a.add(screenA);
+  phone.add(backing(false), backing(true));
 
-  const pivot = new Group();
-  const b = new Group();
-  b.add(mesh(slab(roundedRect(-W, -H / 2, 0, H / 2, R, RH, RH, R)), metal));
-  const faceB = mesh(new ShapeGeometry(roundedRect(-W + 0.003, -H / 2 + 0.003, -0.0015, H / 2 - 0.003, R - 0.003, RH, RH, R - 0.003), 12), glass);
-  faceB.position.z = 0.0006;
-  b.add(faceB);
-  const screenB = mesh(new ShapeGeometry(roundedRect(-W + BEZEL, -H / 2 + BEZEL, 0, H / 2 - BEZEL, R - BEZEL, 0, 0, R - BEZEL), 12), innerFront) as Mesh;
-  screenB.position.z = SCREEN_Z;
-  toDevice(screenB, innerFront);
-  b.add(screenB);
-  // The outside of the front half carries the cover screen, under black glass, with a camera hole.
-  const backGlass = new ShapeGeometry(roundedRect(-W / 2 + 0.003, -H / 2 + 0.003, W / 2 - 0.003, H / 2 - 0.003, R - 0.003, R - 0.003, R - 0.003, R - 0.003), 12);
-  backGlass.rotateY(Math.PI);
-  backGlass.translate(-W / 2, 0, -T - 0.0006);
-  b.add(mesh(backGlass, glass));
-  const cover = screenGeometry(roundedRect(-COVER_W / 2, -COVER_H / 2, COVER_W / 2, COVER_H / 2, R - 0.03, R - 0.03, R - 0.03, R - 0.03));
-  cover.rotateY(Math.PI);
-  cover.translate(-W / 2, 0, -T - 0.0012);
-  b.add(mesh(cover, coverMat));
-  const hole = new ShapeGeometry(roundedRect(-0.011, -0.011, 0.011, 0.011, 0.011, 0.011, 0.011, 0.011), 12);
-  hole.rotateY(Math.PI);
-  hole.translate(-W / 2, COVER_H / 2 - 0.028, -T - 0.0018);
-  b.add(mesh(hole, new MeshBasicMaterial({ color: 0x020202 })));
-  pivot.add(b);
-
-  // The hinge spine: a half cylinder that faces outwards (-x) when closed and tucks behind when open.
-  const spine = mesh(new CylinderGeometry(T * 0.985, T * 0.985, H - 2 * RH, 32, 1, false, Math.PI, Math.PI), metal);
-  device.add(a, pivot, spine);
+  const device = new Group();
+  device.add(phone);
   const root = new Group();
   root.add(device);
   scene.add(root);
 
-  // Reflections from a small studio environment, then compile the shaders off the main thread
-  // where the browser supports it.
   await idle();
   const pmrem = new PMREMGenerator(renderer);
   const room = new RoomEnvironment();
   scene.environment = pmrem.fromScene(room, 0.04, 0.1, 100, { size: 128 }).texture;
+  scene.environmentIntensity = 1.3;
   room.dispose();
   await idle();
   try { await renderer.compileAsync(scene, camera); } catch { /* compiles on first render instead */ }
 
   // Textures: the lock screen and the first dashboard frame now; the video only once it opens.
-  const { cover: coverUrl, inner: innerUrl, innerPoster } = track.dataset;
+  const images = new TextureLoader();
   const ready = { cover: false };
-  if (coverUrl) loader.load(coverUrl, (t) => { coverMat.map = asTexture(t); coverMat.color.set(0xffffff); coverMat.needsUpdate = true; ready.cover = true; dirty = true; });
-  if (innerPoster) loader.load(innerPoster, (t) => { if (!videoTex) { t.anisotropy = renderer.capabilities.getMaxAnisotropy(); setInner(t); } });
+  let videoTex: VideoTexture | null = null;
+  if (coverUrl) images.load(coverUrl, (t) => { setScreen('outer', t, t.image.width, t.image.height); ready.cover = true; });
+  if (innerPoster) images.load(innerPoster, (t) => { if (!videoTex) setScreen('inner', t, t.image.width, t.image.height); });
   const video = document.createElement('video');
   video.muted = true;
   video.loop = true;
   video.playsInline = true;
   video.preload = 'none';
   video.crossOrigin = 'anonymous';
-  let videoTex: VideoTexture | null = null;
   const startVideo = () => {
     if (!innerUrl || video.src) return;
     video.src = innerUrl;
     video.addEventListener('loadeddata', () => {
       videoTex = new VideoTexture(video);
       videoTex.needsUpdate = true; // upload the current frame now, before playback starts
-      (innerFront.uniforms.map.value as Texture | null)?.dispose();
-      setInner(videoTex);
+      setScreen('inner', videoTex, video.videoWidth, video.videoHeight);
     }, { once: true });
   };
 
@@ -338,32 +443,34 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
   };
   p = progress();
 
-  const apply = () => {
-    const unfold = smooth(0.1, 0.8, p);
-    const hinge = hingeAngles(unfold);
-    const theta = hinge.theta;
-    pivot.rotation.y = hinge.pivot;
-    spine.rotation.y = hinge.spine;
-    // Keep the device centred as its outline grows to the left.
-    const left = Math.min(0, hinge.outerEdgeX(W));
-    device.position.x = -(W + left) / 2;
-    device.position.z = -0.5 * W * Math.sin(theta) * 0.6;
+  // Kept warm just outside the screen, but drawn (and the video played) only while visible.
+  const onScreen = () => { const r = stage.getBoundingClientRect(); return r.bottom > 0 && r.top < window.innerHeight; };
 
-    // One clear turn: a three-quarter view that swings round to face you while it opens.
-    const turn = easeOut(smooth(0, 0.86, p));
-    const enter = clamp(-p); // 1 when the stage is just entering, 0 once pinned
-    root.rotation.y = lerp(0.62, 0, turn) + 0.18 * enter; // starts showing the hinge side
-    root.rotation.x = lerp(0.2, 0, turn) + 0.05 * enter;
-    root.position.y = -0.12 * enter;
+  let rotY = 0;
+  const apply = () => {
+    // Pinned, it first shows its back, flips round to the cover screen, then unfolds.
+    const unfold = smooth(0.38, 0.88, p);
+    const hinge = hingeAngles(unfold);
+    bend.value = hinge.pivot;
+    const left = Math.min(0, hinge.outerEdgeX(HALF_W));
+    device.position.x = -(HALF_W + left) / 2;
+    device.position.z = -0.35 * HALF_W * Math.sin(hinge.theta);
+
+    const flip = easeInOut(smooth(0.02, 0.36, p)); // back (π + 0.55) round to a three-quarter front (0.45)
+    rotY = lerp(lerp(Math.PI + 0.55, 0.45, flip), 0, smooth(0.36, 0.93, p)) + 0.2 * clamp(-p);
+    root.rotation.y = rotY;
+    root.rotation.x = lerp(0.18, 0, smooth(0.3, 0.93, p));
+    root.rotation.z = Math.sin(flip * Math.PI) * -0.08; // a little roll mid-flip
+    root.position.y = -1.2 * clamp(-p);
 
     // Frame the closed phone by height and the open device by width; portrait screens get closer.
     const portrait = aspect < 1;
-    const dClosed = fitDistance((W + T) / (portrait ? 0.62 : 0.42), H / 0.64);
-    const dOpen = fitDistance((2 * W) / (portrait ? 0.94 : 0.86), H / 0.8);
+    const dClosed = fitDistance((HALF_W + 0.6) / (portrait ? 0.62 : 0.42), HEIGHT / 0.64);
+    const dOpen = fitDistance((2 * HALF_W) / (portrait ? 0.94 : 0.86), HEIGHT / 0.8);
     camera.position.set(0, 0, lerp(dClosed, dOpen, unfold));
     camera.lookAt(0, 0, 0);
 
-    const deg = Math.round((theta * 180) / Math.PI);
+    const deg = Math.round((hinge.theta * 180) / Math.PI);
     if (deg !== lastAngle) { track.setAttribute('data-fold-angle', String(deg)); lastAngle = deg; }
     // Once it is open, the glass cursor reads "Live demo" over it.
     overDevice = isOverDevice();
@@ -373,7 +480,7 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
       const c = cursorFollower();
       if (c) { if (wantLabel) c.setText('Live demo'); else c.removeText(); }
     }
-    if (unfold > 0.15) startVideo();
+    if (unfold > 0.1) startVideo();
     const wantPlay = unfold > 0.35 && active && onScreen();
     if (wantPlay && video.paused && video.src) video.play().catch(() => {});
     if (!wantPlay && !video.paused) video.pause();
@@ -388,8 +495,6 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
     if (on !== fixed) { fixed = on; canvas.classList.toggle('is-fixed', on); }
   };
 
-  // Kept warm just outside the screen, but drawn (and the video played) only while visible.
-  const onScreen = () => { const r = stage.getBoundingClientRect(); return r.bottom > 0 && r.top < window.innerHeight; };
   let wasOnScreen = false;
   const frame = () => {
     raf = requestAnimationFrame(frame);
@@ -421,18 +526,25 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
   const io = new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()), { rootMargin: '25% 0px' });
   io.observe(track);
 
+  // Test hooks: the hinge (model x ≈ -0.3) and the cover half's free edge (model x -8.25, turned).
   const probe = new Vector3();
-  const stageX = (obj: Object3D, x: number) => {
+  const stageX = (x: number, z: number) => {
     scene.updateMatrixWorld();
-    probe.set(x, 0, 0);
-    obj.localToWorld(probe);
+    probe.set(x, 0, z);
+    phone.localToWorld(probe);
     probe.project(camera);
     return (probe.x * 0.5 + 0.5) * stage.clientWidth;
   };
   const handle: FoldHandle = {
     screenAspect: SCREEN_ASPECT,
     isCanvasFixed: () => fixed,
-    screenX: (part) => (part === 'spine' ? stageX(device, -T) : stageX(b, -W)),
+    facing: () => (Math.cos(rotY) >= 0 ? 'front' : 'back'),
+    screenX: (part) => {
+      if (part === 'spine') return stageX(-0.3, HINGE_Z);
+      const c = Math.cos(bend.value), s = Math.sin(bend.value);
+      const x = -8.25, z = 0 - HINGE_Z;
+      return stageX(c * x + s * z, -s * x + c * z + HINGE_Z);
+    },
     destroy: () => {
       io.disconnect();
       ro.disconnect();
@@ -440,10 +552,8 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
       stop();
       video.removeAttribute('src');
       geos.forEach((g) => g.dispose());
-      [metal, glass, coverMat].forEach((m) => { m.map?.dispose(); m.dispose(); });
-      (innerFront.uniforms.map.value as Texture | null)?.dispose();
-      innerFront.dispose();
-      innerBack.dispose();
+      materials.forEach((m) => m.dispose());
+      for (const s of Object.values(screens)) { s.material.map?.dispose(); s.material.dispose(); }
       scene.environment?.dispose();
       pmrem.dispose();
       renderer.dispose();
