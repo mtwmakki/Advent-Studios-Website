@@ -32,8 +32,11 @@ const words = ['Web design', 'UI/UX', 'Apps', 'Automation', 'Brand'];
     letter-spacing: -0.045em;
     white-space: nowrap;
   }
+  /* Alternate words in the dotted Srotone, next to the solid Geist words. Dot fonts stay on
+     their grid only without extra letter spacing. */
   .marquee__word.is-outline {
-    color: transparent;
-    -webkit-text-stroke: max(1.5px, 0.012em) var(--obsidian);
+    font-family: 'Srotone Dot', var(--font-sans);
+    font-weight: 700;
+    letter-spacing: 0;
   }
 </style>

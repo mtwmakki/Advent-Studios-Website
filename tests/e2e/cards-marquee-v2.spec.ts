@@ -13,19 +13,22 @@ test('the Block A mark appears only in the logo and intro, not in cards or marqu
   await expect(page.locator('#marquee svg')).toHaveCount(0);
 });
 
-test('marquee words alternate solid and outline', async ({ page }) => {
+test('marquee words alternate solid Geist and dotted Srotone', async ({ page }) => {
   await page.goto('');
+  await page.evaluate(() => document.fonts.ready);
   const styles = await page.locator('#marquee [data-marquee-item]').first().locator('.marquee__word').evaluateAll((ws) =>
-    ws.map((w) => ({ stroke: parseFloat(getComputedStyle(w).webkitTextStrokeWidth || '0'), color: getComputedStyle(w).color })),
+    ws.map((w) => {
+      const cs = getComputedStyle(w);
+      return { family: cs.fontFamily.split(',')[0].replace(/["']/g, '').trim(), stroke: parseFloat(cs.webkitTextStrokeWidth || '0'), color: cs.color };
+    }),
   );
   expect(styles.length).toBe(5);
   styles.forEach((s, i) => {
-    if (i % 2 === 0) expect(s.stroke, `word ${i} solid`).toBe(0);
-    else {
-      expect(s.stroke, `word ${i} outline`).toBeGreaterThan(0);
-      expect(s.color, `word ${i} hollow`).toBe('rgba(0, 0, 0, 0)');
-    }
+    expect(s.stroke, `word ${i} has no outline stroke`).toBe(0);
+    expect(s.color, `word ${i} is filled`).not.toBe('rgba(0, 0, 0, 0)');
+    expect(s.family, `word ${i}`).toBe(i % 2 === 0 ? 'Geist Variable' : 'Srotone Dot');
   });
+  expect(await page.evaluate(() => document.fonts.check('700 100px "Srotone Dot"'))).toBe(true);
 });
 
 test('each card has a full-bleed media slot on its right half', async ({ page }) => {
