@@ -35,7 +35,7 @@ test('the two statement lines drift in opposite directions on scroll', async ({ 
 async function scrollFold(page: Page, f: number) {
   const { top, h } = await page.locator('#work [data-fold]').evaluate((el) => ({ top: el.getBoundingClientRect().top + window.scrollY, h: (el as HTMLElement).offsetHeight }));
   const vh = await page.evaluate(() => window.innerHeight);
-  await scrollTo(page, Math.round(top + (h - vh) * f));
+  await scrollTo(page, Math.round(f < 0 ? top + f * vh : top + (h - vh) * f));
   await page.waitForTimeout(500);
 }
 const angle = (page: Page) => page.locator('#work [data-fold]').evaluate((el) => Number(el.getAttribute('data-fold-angle')));
@@ -113,6 +113,24 @@ test('the foldable stays pinned while it opens', async ({ page }) => {
   await scrollFold(page, 0.7);
   const b = (await page.locator('#work [data-fold-stage]').boundingBox())!.y;
   expect(Math.abs(a - b)).toBeLessThan(2);
+});
+
+test('while pinned the 3D canvas is a fixed layer in the same place (no sticky repaint shake on iOS)', async ({ page }) => {
+  await ready(page);
+  await scrollFold(page, 0.5);
+  await expect(page.locator('canvas[data-fold-canvas]')).toHaveCount(1, { timeout: 8000 });
+  await expect.poll(() => page.evaluate(() => (window as any).__fold.isCanvasFixed() as boolean)).toBe(true);
+  const canvas = page.locator('canvas[data-fold-canvas]');
+  expect(await canvas.evaluate((el) => getComputedStyle(el).position)).toBe('fixed');
+  const c = (await canvas.boundingBox())!;
+  const st = (await page.locator('#work [data-fold-stage]').boundingBox())!;
+  expect(Math.abs(c.y - st.y)).toBeLessThan(1);
+  expect(Math.abs(c.height - st.height)).toBeLessThan(1);
+  expect(Math.abs(c.width - st.width)).toBeLessThan(1);
+  // Before the pin it rides the stage again.
+  await scrollFold(page, -0.3);
+  await expect.poll(() => page.evaluate(() => (window as any).__fold.isCanvasFixed() as boolean)).toBe(false);
+  expect(await canvas.evaluate((el) => getComputedStyle(el).position)).toBe('absolute');
 });
 
 test.describe('reduced motion', () => {

@@ -130,6 +130,8 @@ export type FoldHandle = {
   screenAspect: number;
   /** For tests: where a part of the device is on screen, in px from the stage's left edge. */
   screenX: (part: 'spine' | 'frontEdge') => number;
+  /** For tests: whether the canvas is currently the fixed layer (stage pinned). */
+  isCanvasFixed: () => boolean;
 };
 
 /** Waits for an idle moment so the setup never blocks scrolling in one long task. */
@@ -326,10 +328,12 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
   };
 
   // Scroll progress through the pinned track: < 0 while it scrolls in, 0..1 while pinned.
+  // Measured against the stage (100svh), not the window: on iPhone the window height changes as
+  // Safari's address bar collapses and expands, which would nudge the angle while it animates.
   const progress = () => {
     const r = track.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const run = Math.max(1, track.offsetHeight - vh);
+    const sh = stage.offsetHeight || window.innerHeight;
+    const run = Math.max(1, track.offsetHeight - sh);
     return clamp(-r.top / run, -1, 1);
   };
   p = progress();
@@ -375,6 +379,15 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
     if (!wantPlay && !video.paused) video.pause();
   };
 
+  // While the stage is pinned, the canvas is a fixed layer at the same spot instead of riding the
+  // sticky stage: iOS Safari shakes sticky layers whose content repaints every frame (the video).
+  let fixed = false;
+  const pinCanvas = () => {
+    const r = track.getBoundingClientRect();
+    const on = r.top <= 0 && r.bottom >= stage.offsetHeight;
+    if (on !== fixed) { fixed = on; canvas.classList.toggle('is-fixed', on); }
+  };
+
   // Kept warm just outside the screen, but drawn (and the video played) only while visible.
   const onScreen = () => { const r = stage.getBoundingClientRect(); return r.bottom > 0 && r.top < window.innerHeight; };
   let wasOnScreen = false;
@@ -386,6 +399,7 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
       return;
     }
     if (!wasOnScreen) { wasOnScreen = true; dirty = true; }
+    pinCanvas();
     const target = progress();
     const next = Math.abs(target - p) < 0.0005 ? target : p + (target - p) * (coarse ? 0.25 : 0.16);
     if (next !== p) { p = next; dirty = true; }
@@ -417,6 +431,7 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
   };
   const handle: FoldHandle = {
     screenAspect: SCREEN_ASPECT,
+    isCanvasFixed: () => fixed,
     screenX: (part) => (part === 'spine' ? stageX(device, -T) : stageX(b, -W)),
     destroy: () => {
       io.disconnect();
