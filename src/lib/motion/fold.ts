@@ -17,7 +17,6 @@ import {
   LinearFilter,
   LinearMipmapLinearFilter,
   PMREMGenerator,
-  PlaneGeometry,
   DirectionalLight,
   HemisphereLight,
   ACESFilmicToneMapping,
@@ -59,7 +58,7 @@ const HIDDEN = ['lJPfQMFXvvcmdtA'];
 const BACK_LAYERS = ['UPeNpLgJbcWzHun'];
 // The black surrounds behind the inner screen. The screen mesh has hairline cracks near the hinge,
 // and lit, these surrounds showed through them as two grey lines down the open screen; drawn in
-// flat black they disappear (they are a black bezel either way).
+// flat black the cracks read as black too (they are a black bezel either way).
 const UNDER_SCREEN = ['RwQzmCvUWHGlFfV', 'PXwNjghIIgDPXsa'];
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -342,26 +341,6 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
     phone.add(mesh);
   });
 
-  // A black backing under each half of the inner screen. The screen's bending strip meets the flat
-  // screen with hairline gaps that let the page show through as faint lines on high-density screens.
-  const backing = (moving: boolean) => {
-    const g = new PlaneGeometry(7.95, 11.2);
-    g.translate(moving ? -7.95 / 2 : 7.95 / 2, 0.34562 + 11.1035 / 2 - 5.8974, 0.2);
-    const m = new MeshBasicMaterial({ color: 0x000000 });
-    if (moving) {
-      m.onBeforeCompile = (shader) => {
-        shader.uniforms.foldAngle = bend;
-        shader.vertexShader = `${foldShader}\n${shader.vertexShader}`.replace('#include <begin_vertex>', 'vec2 folded = rotateHinge(position.xz);\nvec3 transformed = vec3(folded.x, position.y, folded.y);');
-      };
-      m.customProgramCacheKey = () => 'fold-backing';
-    }
-    materials.push(m);
-    geos.push(g);
-    const mesh = new Mesh(g, m);
-    mesh.frustumCulled = false;
-    return mesh;
-  };
-  phone.add(backing(false), backing(true));
 
   const device = new Group();
   device.add(phone);
