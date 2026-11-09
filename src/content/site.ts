@@ -45,6 +45,15 @@ export const site = {
       'Custom apps, workflow automation, websites and brand identities for teams that need to move faster.',
   },
 
+  notFound: {
+    title: 'Page not found | Advent Studio',
+    description: 'This page does not exist. Head back to the Advent Studio home page.',
+    label: 'Error 404',
+    srLabel: 'Error 404: page not found',
+    headline: 'This page drifted off the grid.',
+    body: 'The link may be old, or the page has moved. Everything else is right where we left it.',
+    home: 'Back to home',
+  },
   hero: {
     headline: 'Design & development studio for apps, web and brands.',
     subline:

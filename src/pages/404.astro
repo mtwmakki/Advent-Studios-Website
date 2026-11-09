@@ -1,0 +1,120 @@
+---
+import Base from '../layouts/Base.astro';
+import Logo from '../components/Logo.astro';
+import Button from '../components/Button.astro';
+import { site } from '../content/site';
+import { waLink } from '../lib/whatsapp';
+
+const t = site.notFound;
+const home = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+<Base title={t.title} description={t.description} noindex>
+  <header class="nf-nav">
+    <div class="container nf-nav__bar">
+      <a class="nf-nav__home" href={home} aria-label="Advent Studio, home"><Logo /></a>
+      <Button href={waLink()} label="Book a call" variant="dark" external />
+    </div>
+  </header>
+
+  <main id="top" class="nf">
+    <div class="container nf__inner">
+      <p class="mono-label nf__label" aria-hidden="true">{t.label}</p>
+      <p class="sr-only">{t.srLabel}</p>
+      <div class="nf__code" data-error-code aria-hidden="true">4<span class="nf__zero">0</span>4</div>
+      <h1 class="nf__title" data-reveal="hero">{t.headline}</h1>
+      <p class="nf__body" data-fade>{t.body}</p>
+      <div class="nf__actions" data-fade>
+        <Button href={home} label={t.home} variant="dark" size="lg" />
+        <Button href={waLink()} label="Book a call" variant="ghost" size="lg" external />
+      </div>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .nf-nav {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 50;
+  }
+  .nf-nav__bar {
+    height: var(--nav-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .nf-nav__home {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+  }
+
+  .nf {
+    min-height: 100svh;
+    display: grid;
+    align-content: center;
+    padding-block: calc(var(--nav-h) + 24px) 64px;
+    overflow-x: clip;
+  }
+  .nf__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .nf__label { color: var(--graphite); }
+
+  /* The big 404 in the dotted Srotone. It prints in row by row, like a dot-matrix display,
+     then the zero blinks now and then like a stuck pixel. */
+  .nf__code {
+    margin-top: clamp(16px, 2vw, 28px);
+    margin-bottom: -0.12em; /* the font's descender space; the digits sit on the baseline */
+    font: 700 clamp(140px, 27vw, 400px)/1 'Srotone Pixel', var(--font-display);
+    letter-spacing: 0;
+    color: var(--obsidian);
+    animation: nf-print 0.9s steps(14, end) 0.15s both;
+  }
+  .nf__zero {
+    color: var(--signal);
+    animation: nf-blink 3.2s steps(1, end) 1.4s infinite;
+  }
+  @keyframes nf-print {
+    from { clip-path: inset(0 0 100% 0); }
+    to { clip-path: inset(0 0 0 0); }
+  }
+  @keyframes nf-blink {
+    0%, 86% { opacity: 1; }
+    88% { opacity: 0.2; }
+    90% { opacity: 1; }
+    92% { opacity: 0.2; }
+    94%, 100% { opacity: 1; }
+  }
+
+  .nf__title {
+    max-width: 18ch;
+    margin-top: clamp(16px, 2vw, 28px);
+    font: 600 clamp(28px, 3.6vw, 52px)/1.1 var(--font-sans);
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  .nf__body {
+    max-width: 44ch;
+    margin-top: 16px;
+    font-size: clamp(17px, 1.4vw, 19px);
+    line-height: 1.55;
+    color: var(--graphite);
+  }
+  .nf__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  @media (max-width: 600px) {
+    .nf-nav :global(.btn) { display: none; }
+  }
+</style>

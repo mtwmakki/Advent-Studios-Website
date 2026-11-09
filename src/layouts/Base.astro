@@ -6,8 +6,9 @@ import srotone800 from '../assets/fonts/srotone-800.woff2?url';
 interface Props {
   title: string;
   description: string;
+  noindex?: boolean;
 }
-const { title, description } = Astro.props;
+const { title, description, noindex = false } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const canonical = new URL(base, Astro.site);
 const ogImage = new URL(`${base}og.png`, Astro.site);
@@ -19,6 +20,7 @@ const ogImage = new URL(`${base}og.png`, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
     <meta name="theme-color" content="#F2F1EC" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />

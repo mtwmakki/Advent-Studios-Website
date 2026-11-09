@@ -13,6 +13,8 @@
 @font-face { font-family: 'Srotone'; src: url('../assets/fonts/srotone-800.woff2') format('woff2'); font-weight: 800; font-style: normal; font-display: swap; }
 /* Srotone Dot: a dot-matrix version generated from Srotone Bold (16-dot cap height). Only for the marquee's alternate words. */
 @font-face { font-family: 'Srotone Dot'; src: url('../assets/fonts/srotone-dot-700.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+/* Srotone Pixel: square-dot version generated from Srotone Bold (13-dot cap height). Only for the 404 page. */
+@font-face { font-family: 'Srotone Pixel'; src: url('../assets/fonts/srotone-pixel-700.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
 
 :root {
   --obsidian: #111110;
