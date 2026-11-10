@@ -70,6 +70,7 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 const screenShader = /* glsl */ `
 uniform float foldAngle;
 uniform vec2 uiPixel;
+uniform vec2 uiBlurPixel; // texel size the blur radius is measured in (the full-size video), whatever size is loaded
 uniform vec4 uiFrame;
 uniform vec2 uiGradient;
 uniform vec3 uiReferenceEye;
@@ -106,18 +107,31 @@ vec3 screenColor() {
   vec2 coverage = smoothstep(-aa, aa, sourceUV) * (1.0 - smoothstep(vec2(1.0) - aa, vec2(1.0) + aa, sourceUV));
   vec3 color = sampleUI(sourceUV, baseLod) * coverage.x * coverage.y;
   if (radius > 0.0) {
-    float lod = max(baseLod, log2(max(1.0, radius)));
-    vec2 footprint = max(aa, uiPixel * radius * 0.75);
+    float lod = max(baseLod, log2(max(1.0, radius * uiBlurPixel.x / uiPixel.x)));
+    vec2 footprint = max(aa, uiBlurPixel * radius * 0.75);
     color = vec3(0.0);
-    for (int y = -2; y <= 2; y++) {
-      for (int x = -2; x <= 2; x++) {
-        float wx = x == 0 ? 6.0 : (abs(x) == 1 ? 4.0 : 1.0);
-        float wy = y == 0 ? 6.0 : (abs(y) == 1 ? 4.0 : 1.0);
-        vec2 sampleUV = sourceUV + vec2(float(x), float(y)) * uiPixel * radius;
-        vec2 cov = smoothstep(-footprint, footprint, sampleUV) * (1.0 - smoothstep(vec2(1.0) - footprint, vec2(1.0) + footprint, sampleUV));
-        color += sampleUI(sampleUV, lod) * cov.x * cov.y * wx * wy / 256.0;
+    #ifdef LOW_TAPS
+      // Phones: 3 x 3 taps (1-2-1) spread to the same width as the 5 x 5 binomial below.
+      for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+          float wx = x == 0 ? 2.0 : 1.0;
+          float wy = y == 0 ? 2.0 : 1.0;
+          vec2 sampleUV = sourceUV + vec2(float(x), float(y)) * 1.4142 * uiBlurPixel * radius;
+          vec2 cov = smoothstep(-footprint, footprint, sampleUV) * (1.0 - smoothstep(vec2(1.0) - footprint, vec2(1.0) + footprint, sampleUV));
+          color += sampleUI(sampleUV, lod) * cov.x * cov.y * wx * wy / 16.0;
+        }
       }
-    }
+    #else
+      for (int y = -2; y <= 2; y++) {
+        for (int x = -2; x <= 2; x++) {
+          float wx = x == 0 ? 6.0 : (abs(x) == 1 ? 4.0 : 1.0);
+          float wy = y == 0 ? 6.0 : (abs(y) == 1 ? 4.0 : 1.0);
+          vec2 sampleUV = sourceUV + vec2(float(x), float(y)) * uiBlurPixel * radius;
+          vec2 cov = smoothstep(-footprint, footprint, sampleUV) * (1.0 - smoothstep(vec2(1.0) - footprint, vec2(1.0) + footprint, sampleUV));
+          color += sampleUI(sampleUV, lod) * cov.x * cov.y * wx * wy / 256.0;
+        }
+      }
+    #endif
   }
   return color * (1.0 - min(1.0, effect * 2.0));
 }
@@ -211,7 +225,7 @@ export type FoldHandle = {
 export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
   const stage = track.querySelector<HTMLElement>('[data-fold-stage]');
   const work = document.getElementById('work');
-  const { model: modelUrl, cover: coverUrl, inner: innerUrl, innerPoster } = track.dataset;
+  const { model: modelUrl, cover: coverUrl, inner: fullInnerUrl, innerSmall, innerPoster } = track.dataset;
   if (!stage || !work || !modelUrl) return null;
 
   let renderer: WebGLRenderer;
@@ -222,6 +236,8 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
   }
   if (!renderer.getContext()) return null;
   const coarse = window.matchMedia('(pointer: coarse)').matches;
+  // Phones and tablets get the half-size video: it is decoded, copied to the GPU and mip-mapped every frame.
+  const innerUrl = coarse && innerSmall ? innerSmall : fullInnerUrl;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2));
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.toneMapping = ACESFilmicToneMapping;
@@ -268,10 +284,10 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
 
   // Screens: unlit, with the author's projection. Textures stay undecoded and are decoded in the shader.
   const bend = { value: Math.PI };
-  const anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
   const screens = {
-    inner: { material: new MeshBasicMaterial({ color: 0x000000, toneMapped: false }), frame: { value: INNER_FRAME.clone() }, gradient: { value: new Vector2(0.5, 0) }, pixel: { value: new Vector2(1 / 2288, 1 / 1608) } },
-    outer: { material: new MeshBasicMaterial({ color: 0x000000, toneMapped: false }), frame: { value: OUTER_FRAME.clone() }, gradient: { value: new Vector2(0, 1) }, pixel: { value: new Vector2(1 / 1035, 1 / 1500) } },
+    inner: { material: new MeshBasicMaterial({ color: 0x000000, toneMapped: false }), frame: { value: INNER_FRAME.clone() }, gradient: { value: new Vector2(0.5, 0) }, pixel: { value: new Vector2(1 / 2288, 1 / 1608) }, blur: { value: new Vector2(1 / 2288, 1 / 1608) } },
+    outer: { material: new MeshBasicMaterial({ color: 0x000000, toneMapped: false }), frame: { value: OUTER_FRAME.clone() }, gradient: { value: new Vector2(0, 1) }, pixel: { value: new Vector2(1 / 1035, 1 / 1500) }, blur: { value: new Vector2(1 / 1035, 1 / 1500) } },
   };
   const setScreen = (kind: 'inner' | 'outer', t: Texture, w: number, h: number) => {
     t.colorSpace = NoColorSpace;
@@ -285,6 +301,7 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
     s.material.color.set(0xffffff);
     s.material.needsUpdate = true;
     s.pixel.value.set(1 / w, 1 / h);
+    if (kind === 'outer') s.blur.value.set(1 / w, 1 / h); // the inner screen's blur stays measured in full-size video pixels
     dirty = true;
   };
 
@@ -317,8 +334,9 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
           shader.uniforms.uiGradient = s.gradient;
           shader.uniforms.uiReferenceEye = { value: EYE };
           shader.uniforms.uiPixel = s.pixel;
+          shader.uniforms.uiBlurPixel = s.blur;
           shader.fragmentShader = shader.fragmentShader
-            .replace('#include <map_pars_fragment>', `#include <map_pars_fragment>\n${kind === 'inner' ? '#define INNER_UI' : ''}\n${screenShader}`)
+            .replace('#include <map_pars_fragment>', `#include <map_pars_fragment>\n${kind === 'inner' ? '#define INNER_UI' : ''}\n${coarse ? '#define LOW_TAPS' : ''}\n${screenShader}`)
             .replace('#include <map_fragment>', 'diffuseColor.rgb *= screenColor();');
           shader.vertexShader = `varying vec3 vUIPosition;\n${shader.vertexShader}`.replace('#include <project_vertex>', 'vUIPosition = transformed;\n#include <project_vertex>');
         }
@@ -371,6 +389,7 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
   video.crossOrigin = 'anonymous';
   const startVideo = () => {
     if (!innerUrl || video.src) return;
+    video.preload = 'auto';
     video.src = innerUrl;
     video.addEventListener('loadeddata', () => {
       videoTex = new VideoTexture(video);
@@ -494,7 +513,14 @@ export async function initFold(track: HTMLElement): Promise<FoldHandle | null> {
     renderer.render(scene, camera);
     if (!shown && ready.cover) { shown = true; work.classList.add('is-3d'); }
   };
-  const start = () => { if (active) return; active = true; dirty = true; raf = requestAnimationFrame(frame); };
+  const start = () => {
+    if (active) return;
+    active = true;
+    dirty = true;
+    raf = requestAnimationFrame(frame);
+    // Fetch and decode the first frame while the phone is still scrolling in, so the opening does not wait for it.
+    if (coarse) startVideo();
+  };
   const stop = () => {
     if (!active) return;
     active = false;

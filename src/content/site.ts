@@ -70,6 +70,7 @@ export const site = {
     fold: {
       model: 'fold/duo.glb',
       inner: 'fold/fold-inner.mp4',
+      innerSmall: 'fold/fold-inner-sm.mp4',
       innerPoster: 'fold/fold-inner.jpg',
       cover: 'fold/fold-cover.webp',
       stillOpen: 'fold/fold-open.webp',

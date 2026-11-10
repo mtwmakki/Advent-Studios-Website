@@ -1,6 +1,6 @@
 // Renders the foldable's screen content for the Work section into public/fold/:
 //  - fold-inner.mp4 / .jpg (H.264 plays everywhere and came out smaller than VP9 here): the full dashboard at the open screen's shape, an 8s loop
-//    captured frame by frame;
+//    captured frame by frame; fold-inner-sm.mp4 is the same at half size for phones and tablets (less to decode, upload and mip-map every frame);
 //  - fold-cover.webp: the lock screen shown on the cover screen while the device is closed.
 // The stage pages are built statically (no dev server) and served by a tiny local server,
 // so every frame is deterministic.
@@ -88,6 +88,8 @@ try {
   const input = ['-y', '-v', 'error', '-framerate', String(FPS), '-i', join(frames, 'f_%04d.png')];
   log('encoding mp4');
   execFileSync('ffmpeg', [...input, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '23', '-preset', 'slow', '-g', '30', '-movflags', '+faststart', join(out, 'fold-inner.mp4')]);
+  log('encoding small mp4');
+  execFileSync('ffmpeg', [...input, '-vf', 'scale=1144:804:flags=lanczos', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '22', '-preset', 'slow', '-g', '30', '-movflags', '+faststart', join(out, 'fold-inner-sm.mp4')]);
   execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', join(frames, 'f_0000.png'), '-q:v', '3', join(out, 'fold-inner.jpg')]);
   log(`done: ${total} frames (${duration.toFixed(2)}s)`);
 } finally {
